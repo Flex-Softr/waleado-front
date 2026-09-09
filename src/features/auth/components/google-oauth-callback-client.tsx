@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { refreshAccessToken } from "@/lib/api";
 import { markAuthSessionActive } from "@/lib/auth-session";
 import { isSafeInternalPath } from "@/lib/safe-redirect";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export function GoogleOAuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { updateUser, updateWorkspace } = useAuth();
 
   React.useEffect(() => {
     let cancelled = false;
@@ -41,6 +43,8 @@ export function GoogleOAuthCallbackClient() {
       }
 
       markAuthSessionActive();
+      updateUser(session.user);
+      updateWorkspace(session.workspace);
       const next = searchParams.get("next");
       router.replace(
         isSafeInternalPath(next)
