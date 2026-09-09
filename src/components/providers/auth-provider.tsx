@@ -112,14 +112,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (isBootstrapping || !user) return;
 
-    const checkTokenExpiry = () => {
+    const checkTokenExpiry = async () => {
       const token = getAccessToken();
       if (!token || isAccessTokenExpired(token)) {
-        void logout();
+        const refreshed = await refreshAccessToken();
+        if (!refreshed) {
+          void logout();
+        } else {
+          setUser(refreshed.user);
+          setWorkspace(refreshed.workspace);
+        }
       }
     };
 
-    const intervalId = window.setInterval(checkTokenExpiry, 60_000);
+    const intervalId = window.setInterval(() => {
+      void checkTokenExpiry();
+    }, 60_000);
     return () => window.clearInterval(intervalId);
   }, [isBootstrapping, user, logout]);
 

@@ -1,7 +1,9 @@
 import type { AuthSessionPayload } from "@/types/auth";
 import { getApiBaseUrl } from "@/lib/api-config";
+import { hasAuthSessionMarker } from "@/lib/auth-session";
 
 let accessToken: string | null = null;
+let refreshPromise: Promise<AuthSessionPayload | null> | null = null;
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
@@ -52,22 +54,32 @@ async function parseError(res: Response): Promise<ApiError> {
 }
 
 export async function refreshAccessToken(): Promise<AuthSessionPayload | null> {
-  try {
-    const res = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!res.ok) {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${getApiBaseUrl()}/v1/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        accessToken = null;
+        return null;
+      }
+      const data = (await res.json()) as AuthSessionPayload;
+      accessToken = data.accessToken;
+      return data;
+    } catch {
       accessToken = null;
       return null;
+    } finally {
+      refreshPromise = null;
     }
-    const data = (await res.json()) as AuthSessionPayload;
-    accessToken = data.accessToken;
-    return data;
-  } catch {
-    accessToken = null;
-    return null;
-  }
+  })();
+
+  return refreshPromise;
 }
 
 export async function apiFetch(
@@ -75,6 +87,16 @@ export async function apiFetch(
   init: RequestInit = {},
   retried = false
 ): Promise<Response> {
+  if (
+    !accessToken &&
+    hasAuthSessionMarker() &&
+    !path.startsWith("/v1/auth/refresh") &&
+    !path.startsWith("/v1/auth/login") &&
+    !path.startsWith("/v1/auth/register")
+  ) {
+    await refreshAccessToken();
+  }
+
   const url = `${getApiBaseUrl()}${path}`;
   const headers = new Headers(init.headers);
   if (accessToken) {
