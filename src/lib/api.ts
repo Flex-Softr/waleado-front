@@ -43,9 +43,18 @@ export class ApiError extends Error {
 async function parseError(res: Response): Promise<ApiError> {
   try {
     const body = (await res.json()) as {
-      error?: { code?: string; message?: string };
+      error?: { code?: string; message?: string; details?: Record<string, string[] | string> };
     };
-    const msg = body.error?.message ?? res.statusText;
+    let msg = body.error?.message ?? res.statusText;
+    if (body.error?.details && typeof body.error.details === "object") {
+      const detailEntries = Object.entries(body.error.details);
+      if (detailEntries.length > 0) {
+        const detailsStr = detailEntries
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join("; ");
+        msg = `${msg} (${detailsStr})`;
+      }
+    }
     const code = body.error?.code;
     return new ApiError(res.status, msg, code);
   } catch {
@@ -101,6 +110,9 @@ export async function apiFetch(
   const headers = new Headers(init.headers);
   if (accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+  if (init.body && typeof init.body === "string" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
   let res: Response;

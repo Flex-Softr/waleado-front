@@ -103,27 +103,27 @@ export function BillingClient() {
       }
     }
 
-    if (gateway === "sslcommerz" && !effectivePhone) {
-      toast.error("Phone required", {
-        description:
-          "SSLCommerz needs a contact phone. Enter a valid Bangladeshi number or add one in your profile.",
-      });
-      return;
-    }
-
     setLoading(target);
     try {
-      const out = await apiJson<{ url: string }>("/v1/billing/checkout", {
+      const out = await apiJson<CheckoutResponse>("/v1/billing/checkout", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: target,
           gateway,
           customerPhone:
-            gateway === "sslcommerz" ? effectivePhone : undefined,
+            gateway === "sslcommerz" ? (effectivePhone || undefined) : undefined,
         }),
       });
-      if (out.url) {
+      if ("url" in out && out.url) {
         window.location.href = out.url;
+      } else if ("demo" in out && out.demo) {
+        await refreshPlan();
+        toast.success(`Plan upgraded to ${out.planId.toUpperCase()} (demo mode)`);
+      } else {
+        toast.error("Checkout failed", {
+          description: "No checkout URL returned from server.",
+        });
       }
     } catch (e) {
       const msg =
