@@ -501,7 +501,7 @@ export function CreateAutoReplyRuleDialog({
   const triggerHint =
     triggerType === "regex"
       ? "One regex pattern per line. Invalid patterns are rejected on save."
-      : "Separate values with commas, new lines, tabs, /, ; or |. You can also use two or more spaces between values. Any one match fires the rule.";
+      : "Separate values with commas, new lines, tabs, /, ; or |. Use * to match any message (ideal for 24/7 AI assistants). When Continuous Chat is active, follow-up messages are automatically handled in the session without repeating keywords.";
 
   const currentStep = WIZARD_STEPS[wizardStep];
   const fieldClass = "h-11 rounded-xl";
@@ -725,7 +725,7 @@ export function CreateAutoReplyRuleDialog({
                                 id="ar-trigger"
                                 value={keyword}
                                 onChange={(e) => setKeyword(e.target.value)}
-                                placeholder="e.g., hello, hi, help"
+                                placeholder="e.g., hello, hi, help (or * for all messages)"
                                 className="min-h-[88px] resize-y rounded-xl text-[15px] leading-relaxed"
                               />
                               <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
