@@ -39,8 +39,8 @@ export function RegisterForm() {
       toast.error("Passwords do not match");
       return;
     }
-    if (password.length < 10) {
-      toast.error("Password must be at least 10 characters");
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
     setPending(true);
@@ -70,7 +70,7 @@ export function RegisterForm() {
           Create account
         </h1>
         <p className="text-[15px] leading-relaxed text-muted-foreground">
-          Get started with your free workspace today. Password: min. 10
+          Get started with your free workspace today. Password: min. 8
           characters.
         </p>
       </div>
@@ -107,10 +107,10 @@ export function RegisterForm() {
             id="password"
             autoComplete="new-password"
             required
-            minLength={10}
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Min. 10 characters"
+            placeholder="Min. 8 characters"
           />
         </div>
         <div className="space-y-2">
@@ -121,7 +121,7 @@ export function RegisterForm() {
             id="confirm-password"
             autoComplete="new-password"
             required
-            minLength={10}
+            minLength={8}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Re-enter password"

@@ -87,6 +87,23 @@ export function SubscriptionProvider({
   >([]);
 
   const applyBillingPayload = React.useCallback((data: BillingApiResponse) => {
+    if (user?.role === "ADMIN") {
+      setPlanId("business");
+      setStripeConfigured(data.stripeConfigured);
+      setStripePortalEligible(false);
+      setSubscriptionStatus("active");
+      setCurrentPeriodEnd(null);
+      setPaymentGateways(data.paymentGateways ?? []);
+      setTrialStartedAt(null);
+      setTrialEndsAt(null);
+      setTrialUsed(false);
+      setIsTrial(false);
+      setIsTrialExpired(false);
+      setHasActiveSubscription(true);
+      setDaysRemaining(null);
+      return;
+    }
+
     if (isPlanId(data.planId)) {
       setPlanId(data.planId);
     }
@@ -117,7 +134,7 @@ export function SubscriptionProvider({
     setHasActiveSubscription(activeSub);
 
     setDaysRemaining(data.daysRemaining ?? null);
-  }, []);
+  }, [user?.role]);
 
   const refreshPlan = React.useCallback(async () => {
     if (!user) {
@@ -195,52 +212,67 @@ export function SubscriptionProvider({
     await refreshPlan();
   }, [refreshPlan]);
 
+  const isAdmin = user?.role === "ADMIN";
+  const effectiveIsTrial = isAdmin ? false : isTrial;
+  const effectiveIsTrialExpired = isAdmin ? false : isTrialExpired;
+  const effectiveHasActiveSubscription = isAdmin ? true : hasActiveSubscription;
+  const effectivePlanId = isAdmin ? "business" : planId;
+
   const license = React.useMemo(
     () =>
-      licenseFromPlan(planId, {
-        subscriptionStatus,
-        isTrial,
-        isTrialExpired,
-        daysRemaining,
+      licenseFromPlan(effectivePlanId, {
+        subscriptionStatus: isAdmin ? "active" : subscriptionStatus,
+        isTrial: effectiveIsTrial,
+        isTrialExpired: effectiveIsTrialExpired,
+        daysRemaining: isAdmin ? null : daysRemaining,
+        isAdmin,
       }),
-    [planId, subscriptionStatus, isTrial, isTrialExpired, daysRemaining]
+    [
+      effectivePlanId,
+      subscriptionStatus,
+      effectiveIsTrial,
+      effectiveIsTrialExpired,
+      daysRemaining,
+      isAdmin,
+    ]
   );
 
   const value = React.useMemo(
     () => ({
-      planId,
+      planId: effectivePlanId,
       license,
       hydrated,
       stripeConfigured,
       stripePortalEligible,
-      subscriptionStatus,
+      subscriptionStatus: isAdmin ? "active" : subscriptionStatus,
       currentPeriodEnd,
-      trialStartedAt,
-      trialEndsAt,
-      trialUsed,
-      isTrial,
-      isTrialExpired,
-      hasActiveSubscription,
-      daysRemaining,
+      trialStartedAt: isAdmin ? null : trialStartedAt,
+      trialEndsAt: isAdmin ? null : trialEndsAt,
+      trialUsed: isAdmin ? false : trialUsed,
+      isTrial: effectiveIsTrial,
+      isTrialExpired: effectiveIsTrialExpired,
+      hasActiveSubscription: effectiveHasActiveSubscription,
+      daysRemaining: isAdmin ? null : daysRemaining,
       refreshPlan,
       setPlan,
       resetToFreeDemo,
       paymentGateways,
     }),
     [
-      planId,
+      effectivePlanId,
       license,
       hydrated,
       stripeConfigured,
       stripePortalEligible,
+      isAdmin,
       subscriptionStatus,
       currentPeriodEnd,
       trialStartedAt,
       trialEndsAt,
       trialUsed,
-      isTrial,
-      isTrialExpired,
-      hasActiveSubscription,
+      effectiveIsTrial,
+      effectiveIsTrialExpired,
+      effectiveHasActiveSubscription,
       daysRemaining,
       refreshPlan,
       setPlan,

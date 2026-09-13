@@ -53,9 +53,9 @@ export function CreateAdminUserDialog({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 10) {
+    if (password.length < 8) {
       toast.error("Password too short", {
-        description: "Use at least 10 characters.",
+        description: "Use at least 8 characters.",
       });
       return;
     }
@@ -121,10 +121,10 @@ export function CreateAdminUserDialog({
               id="admin-user-password"
               type="password"
               required
-              minLength={10}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min. 10 characters"
+              placeholder="Min. 8 characters"
               autoComplete="new-password"
             />
           </div>

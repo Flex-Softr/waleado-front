@@ -6,6 +6,7 @@ export type LicenseFromPlanOptions = {
   isTrial?: boolean;
   isTrialExpired?: boolean;
   daysRemaining?: number | null;
+  isAdmin?: boolean;
 };
 
 /** Maps subscription plan and trial state to header / UI license copy */
@@ -13,6 +14,16 @@ export function licenseFromPlan(
   planId: PlanId,
   options?: LicenseFromPlanOptions
 ): UserLicense {
+  if (options?.isAdmin) {
+    return {
+      tier: "enterprise",
+      tierLabel: "Admin Access",
+      statusLabel: "Active",
+      statusVariant: "default",
+      isUpgraded: true,
+    };
+  }
+
   if (planId === "pro") {
     return {
       tier: "extended",

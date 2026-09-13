@@ -64,7 +64,8 @@ export function BillingClient() {
   const [gateway, setGateway] = React.useState<PaymentGatewayId>("sslcommerz");
   const [customerPhone, setCustomerPhone] = React.useState("");
 
-  const showExpiredBanner = isTrialExpired || isExpiredQuery;
+  const showExpiredBanner =
+    user?.role !== "ADMIN" && (isTrialExpired || isExpiredQuery);
 
   const sslReady = paymentGateways.find((g) => g.id === "sslcommerz")?.configured;
   const canCheckoutPaid =
@@ -109,36 +110,24 @@ export function BillingClient() {
       });
       return;
     }
+
     setLoading(target);
     try {
-      const data = await apiJson<CheckoutResponse>("/v1/billing/checkout", {
+      const out = await apiJson<{ url: string }>("/v1/billing/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: target,
           gateway,
-          ...(gateway === "sslcommerz" && effectivePhone
-            ? { customerPhone: effectivePhone }
-            : {}),
+          customerPhone:
+            gateway === "sslcommerz" ? effectivePhone : undefined,
         }),
       });
-
-      if ("demo" in data && data.demo) {
-        await refreshPlan();
-        toast.success("Plan upgraded (demo mode)", {
-          description:
-            "Stripe is not configured on the API, or prices are missing. Plan saved on your workspace.",
-        });
-        return;
+      if (out.url) {
+        window.location.href = out.url;
       }
-
-      if ("url" in data && data.url) {
-        window.location.href = data.url;
-        return;
-      }
-    } catch (err) {
+    } catch (e) {
       const msg =
-        err instanceof ApiError ? err.message : "Try again in a moment.";
+        e instanceof ApiError ? e.message : "Checkout initialization failed";
       toast.error("Checkout failed", { description: msg });
     } finally {
       setLoading(null);
@@ -164,7 +153,7 @@ export function BillingClient() {
   }
 
   const periodLabel =
-    currentPeriodEnd && subscriptionStatus
+    currentPeriodEnd && !Number.isNaN(Date.parse(currentPeriodEnd))
       ? new Date(currentPeriodEnd).toLocaleDateString(undefined, {
           month: "short",
           day: "numeric",
@@ -174,7 +163,9 @@ export function BillingClient() {
 
   const anyGatewayReady = paymentGateways.some((g) => g.configured);
   const currentPlanName =
-    planId === "free"
+    user?.role === "ADMIN"
+      ? "Admin Access"
+      : planId === "free"
       ? isTrialExpired
         ? "Trial Expired"
         : "3-Day Trial"
@@ -184,7 +175,19 @@ export function BillingClient() {
 
   return (
     <div className="mx-auto w-full max-w-[1500px] space-y-6">
-      {showExpiredBanner ? (
+      {user?.role === "ADMIN" ? (
+        <div className="flex items-start gap-3.5 rounded-xl border border-purple-500/40 bg-purple-500/10 p-4.5 text-purple-900 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-200">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-purple-600 dark:text-purple-400" />
+          <div className="flex-1 space-y-1">
+            <h4 className="text-sm font-bold text-foreground dark:text-slate-100">
+              Administrator Account — Full Access Active
+            </h4>
+            <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              You are signed in with a platform administrator account. All WhatsApp features, device connections, campaigns, and automation tools are fully unlocked without subscription restrictions or trial expiration.
+            </p>
+          </div>
+        </div>
+      ) : showExpiredBanner ? (
         <div className="flex items-start gap-3.5 rounded-xl border border-destructive/40 bg-destructive/10 p-4.5 text-destructive dark:border-destructive/50 dark:bg-destructive/15">
           <AlertCircle className="mt-0.5 size-5 shrink-0 text-destructive" />
           <div className="flex-1 space-y-1">
@@ -421,9 +424,11 @@ export function BillingClient() {
                         : "Current"}
                     </Badge>
                   ) : plan.id === "free" ? (
-                    <Badge variant="outline" className="shrink-0 rounded-full text-xs font-normal">
-                      Trial Used
-                    </Badge>
+                    user?.role === "ADMIN" ? null : (
+                      <Badge variant="outline" className="shrink-0 rounded-full text-xs font-normal">
+                        Trial Used
+                      </Badge>
+                    )
                   ) : null}
                 </div>
                 <CardDescription className="min-h-10">{plan.description}</CardDescription>
@@ -459,7 +464,9 @@ export function BillingClient() {
               <CardFooter className="mt-auto flex flex-col gap-2 border-t border-border pt-5 dark:border-slate-800">
                 {plan.id === "free" ? (
                   <Button type="button" variant="outline" className="h-11 w-full rounded-full" disabled>
-                    {isTrialExpired
+                    {user?.role === "ADMIN"
+                      ? "Not applicable (Admin)"
+                      : isTrialExpired
                       ? "Trial Expired"
                       : current
                       ? "Current Trial"

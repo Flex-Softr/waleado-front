@@ -114,8 +114,8 @@ export function LoginForm() {
       toast.error("Reset link is missing a token.");
       return;
     }
-    if (password.length < 10) {
-      toast.error("Password must be at least 10 characters.");
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -194,11 +194,11 @@ export function LoginForm() {
               id="password"
               autoComplete={mode === "reset" ? "new-password" : "current-password"}
               required
-              minLength={mode === "reset" ? 10 : undefined}
+              minLength={mode === "reset" ? 8 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={
-                mode === "reset" ? "At least 10 characters" : "Enter your password"
+                mode === "reset" ? "At least 8 characters" : "Enter your password"
               }
             />
           </div>
@@ -213,7 +213,7 @@ export function LoginForm() {
               id="confirmPassword"
               autoComplete="new-password"
               required
-              minLength={10}
+              minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repeat your new password"

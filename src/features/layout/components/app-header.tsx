@@ -107,14 +107,16 @@ export function AppHeader() {
                   <span
                     className={cn(
                       "absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-background",
-                      license.isUpgraded
+                      authUser?.role === "ADMIN" || license.isUpgraded
                         ? "bg-emerald-500"
                         : isTrialExpired
                         ? "bg-rose-500"
                         : "bg-amber-500"
                     )}
                     title={
-                      license.isUpgraded
+                      authUser?.role === "ADMIN"
+                        ? "Administrator — Full Access"
+                        : license.isUpgraded
                         ? "Active subscription"
                         : isTrialExpired
                         ? "Trial expired — payment required"
@@ -130,7 +132,11 @@ export function AppHeader() {
                     {authUser ? userDisplayName(authUser) : "Account"}
                   </span>
                   {hydrated && (
-                    license.isUpgraded ? (
+                    authUser?.role === "ADMIN" ? (
+                      <span className="rounded-full bg-purple-500/10 px-1.5 py-0.2 text-[9px] font-bold text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
+                        ADMIN
+                      </span>
+                    ) : license.isUpgraded ? (
                       <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                         {license.tierLabel.toUpperCase()}
                       </span>
@@ -147,7 +153,9 @@ export function AppHeader() {
                 </div>
                 <span className="truncate text-[10px] font-medium text-muted-foreground">
                   {hydrated
-                    ? license.isUpgraded && license.daysRemaining != null
+                    ? authUser?.role === "ADMIN"
+                      ? "Full Access"
+                      : license.isUpgraded && license.daysRemaining != null
                       ? `${license.daysRemaining}d left`
                       : isTrialExpired
                       ? "Payment required"
@@ -189,7 +197,7 @@ export function AppHeader() {
                   <div className="flex items-center gap-1.5">
                     <Badge
                       variant={
-                        license.isUpgraded
+                        authUser?.role === "ADMIN" || license.isUpgraded
                           ? "default"
                           : isTrialExpired
                           ? "destructive"
@@ -197,9 +205,9 @@ export function AppHeader() {
                       }
                       className="text-[10px] font-semibold px-2 py-0.5"
                     >
-                      {hydrated ? license.tierLabel : "…"}
+                      {hydrated ? (authUser?.role === "ADMIN" ? "Admin Access" : license.tierLabel) : "…"}
                     </Badge>
-                    {hydrated && !license.isUpgraded && !isTrialExpired && daysRemaining != null && (
+                    {hydrated && authUser?.role !== "ADMIN" && !license.isUpgraded && !isTrialExpired && daysRemaining != null && (
                       <span className="text-[10px] text-muted-foreground font-medium">
                         ({daysRemaining}d left)
                       </span>

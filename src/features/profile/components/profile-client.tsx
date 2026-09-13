@@ -190,9 +190,9 @@ export function ProfileClient() {
   const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 10) {
+    if (newPassword.length < 8) {
       toast.error("Password too short", {
-        description: "New password must be at least 10 characters long.",
+        description: "New password must be at least 8 characters long.",
       });
       return;
     }
@@ -542,7 +542,7 @@ export function ProfileClient() {
                         type={showNewPassword ? "text" : "password"}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="At least 10 characters"
+                        placeholder="At least 8 characters"
                         autoComplete="new-password"
                         className="h-11 rounded-lg pr-10 text-sm shadow-xs"
                       />
@@ -599,7 +599,7 @@ export function ProfileClient() {
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>
-                    Must be at least 10 characters. Mix letters, numbers, and symbols for high security.
+                    Must be at least 8 characters. Mix letters, numbers, and symbols for high security.
                   </span>
                 </div>
               </CardContent>
