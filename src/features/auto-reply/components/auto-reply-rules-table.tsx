@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Sparkles, Trash2 } from "lucide-react";
 
 import type { AutoReplyRule } from "@/types/auto-reply";
 
@@ -80,8 +80,19 @@ export function AutoReplyRulesTable({
           <TableRow key={r.id}>
             <TableCell>
               <div className="min-w-0">
-                <p className="font-medium text-foreground">{r.name}</p>
-                {r.openAiEnabled ? (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="font-medium text-foreground">{r.name}</p>
+                  {r.aiSkillName ? (
+                    <Badge
+                      variant="secondary"
+                      className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    >
+                      <Sparkles className="mr-1 size-2.5" />
+                      Skill: {r.aiSkillName}
+                    </Badge>
+                  ) : null}
+                </div>
+                {r.openAiEnabled && !r.aiSkillName ? (
                   <p className="mt-0.5 text-xs text-sky-700 dark:text-sky-300">
                     OpenAI on · fallback below
                   </p>

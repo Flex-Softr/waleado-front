@@ -12,6 +12,7 @@ import {
   Phone,
   Reply,
   Smartphone,
+  Sparkles,
   UserRound,
   Users,
   FileText,
@@ -52,6 +53,12 @@ export const NAV_ITEMS: NavItem[] = [
     description: "Gemini & OpenRouter keys",
     href: "/ai-credentials",
     icon: KeyRound,
+  },
+  {
+    title: "AI Skills",
+    description: "Teach AI role, services & knowledge",
+    href: "/ai-skills",
+    icon: Sparkles,
   },
   {
     title: "API Credentials",

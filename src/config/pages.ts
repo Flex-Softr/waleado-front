@@ -16,6 +16,10 @@ export const PAGE_META = {
     title: "AI Credentials",
     description: "Store Gemini and OpenRouter API keys for AI replies.",
   },
+  "/ai-skills": {
+    title: "AI Skills",
+    description: "Teach AI role, services, and business knowledge for continuous chat auto-reply.",
+  },
   "/api-credentials": {
     title: "API Credentials",
     description: "Create and revoke Open API client ID and secret keys.",

@@ -27,6 +27,8 @@ export type AutoReplyRule = {
   response: string;
   openAiEnabled: boolean;
   openAiSettings: Record<string, unknown> | null;
+  aiSkillId?: string | null;
+  aiSkillName?: string | null;
   active: boolean;
   responseCount: number;
   createdAt: string;

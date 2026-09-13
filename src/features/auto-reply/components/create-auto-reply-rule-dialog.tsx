@@ -19,6 +19,10 @@ import type {
   AiCredentialsListResponse,
   AiSettingsForm,
 } from "@/types/ai-credentials-api";
+import type {
+  AiSkillApi,
+  AiSkillsListResponse,
+} from "@/types/ai-skills-api";
 import type { DeviceApiRecord, DevicesListResponse } from "@/types/device";
 import type {
   MessageTemplateApiRecord,
@@ -180,6 +184,8 @@ export function CreateAutoReplyRuleDialog({
   const [response, setResponse] = React.useState("");
   const [openAiEnabled, setOpenAiEnabled] = React.useState(false);
   const [openAi, setOpenAi] = React.useState<AiSettingsForm>(openAiDefaults);
+  const [aiSkills, setAiSkills] = React.useState<AiSkillApi[]>([]);
+  const [aiSkillId, setAiSkillId] = React.useState("");
   const [active, setActive] = React.useState(true);
 
   React.useEffect(() => {
@@ -189,7 +195,7 @@ export function CreateAutoReplyRuleDialog({
     (async () => {
       setContextLoading(true);
       try {
-        const [devRes, tplRes, mediaRes, credRes] = await Promise.all([
+        const [devRes, tplRes, mediaRes, credRes, skillsRes] = await Promise.all([
           apiJson<DevicesListResponse>("/v1/devices"),
           apiJson<TemplatesListResponse>("/v1/templates"),
           apiJson<TemplateMediaListResponse>("/v1/templates/media").catch(
@@ -198,12 +204,16 @@ export function CreateAutoReplyRuleDialog({
           apiJson<AiCredentialsListResponse>("/v1/ai-credentials").catch(
             () => ({ credentials: [] })
           ),
+          apiJson<AiSkillsListResponse>("/v1/ai-skills").catch(
+            () => ({ skills: [] })
+          ),
         ]);
         if (cancelled) return;
         setDevices(devRes.devices);
         setTemplates(tplRes.templates.filter((tpl) => tpl.active !== false));
         setMediaAssets(mediaRes.assets);
         setCredentials(credRes.credentials);
+        setAiSkills(skillsRes.skills);
 
         if (editingRule) {
           setName(editingRule.name);
@@ -218,8 +228,9 @@ export function CreateAutoReplyRuleDialog({
           setMediaAssetId(editingRule.mediaAssetId ?? "");
           setMediaCaption(editingRule.mediaCaption ?? "");
           setResponse(editingRule.response);
-          setOpenAiEnabled(editingRule.openAiEnabled);
+          setOpenAiEnabled(editingRule.openAiEnabled || Boolean(editingRule.aiSkillId));
           setOpenAi(parseOpenAiFromRule(editingRule.openAiSettings));
+          setAiSkillId(editingRule.aiSkillId ?? "");
           setActive(editingRule.active);
         } else {
           setName("");
@@ -237,6 +248,7 @@ export function CreateAutoReplyRuleDialog({
           setResponse("");
           setOpenAiEnabled(false);
           setOpenAi(openAiDefaults());
+          setAiSkillId("");
           setActive(true);
         }
       } catch (err) {
@@ -250,6 +262,7 @@ export function CreateAutoReplyRuleDialog({
           setTemplates([]);
           setMediaAssets([]);
           setCredentials([]);
+          setAiSkills([]);
         }
       } finally {
         if (!cancelled) setContextLoading(false);
@@ -293,13 +306,13 @@ export function CreateAutoReplyRuleDialog({
   }
 
   const contentOk = React.useMemo(() => {
-    if (openAiEnabled) return true;
+    if (openAiEnabled || Boolean(aiSkillId.trim())) return true;
     if (messageMode === "text") return response.trim().length > 0;
     if (messageMode === "template")
       return templateId !== "__none__" && templateId.length > 0;
     if (messageMode === "media") return mediaAssetId.trim().length > 0;
     return false;
-  }, [openAiEnabled, messageMode, response, templateId, mediaAssetId]);
+  }, [openAiEnabled, aiSkillId, messageMode, response, templateId, mediaAssetId]);
 
   /** Allow leaving the Message step empty for text replies — AI can fill them next. */
   const messageStepOk = React.useMemo(() => {
@@ -310,7 +323,10 @@ export function CreateAutoReplyRuleDialog({
     return false;
   }, [messageMode, templateId, mediaAssetId]);
 
-  const openAiOk = !openAiEnabled || aiSettingsFormValid(openAi);
+  const openAiOk =
+    !openAiEnabled ||
+    Boolean(aiSkillId.trim()) ||
+    aiSettingsFormValid(openAi);
 
   const setupOk =
     name.trim().length > 0 &&
@@ -334,6 +350,7 @@ export function CreateAutoReplyRuleDialog({
   const selectedCredential = credentials.find(
     (c) => c.id === openAi.credentialId
   );
+  const selectedSkill = aiSkills.find((s) => s.id === aiSkillId);
 
   function stepComplete(index: number): boolean {
     switch (WIZARD_STEPS[index]?.id as WizardStepId | undefined) {
@@ -442,8 +459,9 @@ export function CreateAutoReplyRuleDialog({
       mediaAssetId: media,
       mediaCaption: cap,
       response: response.trim(),
-      openAiEnabled,
-      openAiSettings: openAiPayload,
+      openAiEnabled: openAiEnabled || Boolean(aiSkillId.trim()),
+      openAiSettings: openAiEnabled && openAi.credentialId ? openAiPayload : null,
+      aiSkillId: aiSkillId.trim() ? aiSkillId.trim() : null,
       active,
     };
 
@@ -960,48 +978,143 @@ export function CreateAutoReplyRuleDialog({
                               </Badge>
                             </div>
                             <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                              Generate replies with a saved Gemini or OpenRouter
-                              credential. Continuous chat keeps AI responding
-                              until a human sends a message.
+                              Generate replies using taught business AI Skills (continuous chat) or custom credential prompts.
                             </p>
                           </div>
                           <label className="inline-flex cursor-pointer items-center gap-2">
                             <input
                               type="checkbox"
                               role="switch"
-                              checked={openAiEnabled}
-                              onChange={(e) =>
-                                setOpenAiEnabled(e.target.checked)
-                              }
+                              checked={openAiEnabled || Boolean(aiSkillId)}
+                              onChange={(e) => {
+                                const next = e.target.checked;
+                                setOpenAiEnabled(next);
+                                if (!next) setAiSkillId("");
+                              }}
                               className="sr-only"
                             />
                             <span
                               className={cn(
                                 "relative h-7 w-12 shrink-0 rounded-full border border-slate-200 bg-slate-200 transition-colors dark:border-slate-600 dark:bg-slate-700",
-                                openAiEnabled &&
+                                (openAiEnabled || Boolean(aiSkillId)) &&
                                   "border-emerald-500 bg-emerald-500 dark:border-emerald-500"
                               )}
                             >
                               <span
                                 className={cn(
                                   "absolute left-0.5 top-0.5 size-6 rounded-full bg-white shadow transition-transform",
-                                  openAiEnabled && "translate-x-5"
+                                  (openAiEnabled || Boolean(aiSkillId)) && "translate-x-5"
                                 )}
                               />
                             </span>
                           </label>
                         </div>
 
-                        {openAiEnabled ? (
+                        {openAiEnabled || Boolean(aiSkillId) ? (
                           <div className="mt-4 space-y-4 border-t border-sky-200/70 pt-4 dark:border-sky-900/50">
-                            <AiPanelErrorBoundary label="AI settings panel crashed.">
-                              <CredentialModelFields
-                                credentials={credentials}
-                                value={openAi}
-                                onChange={setOpenAi}
-                                showContinuousChat
-                              />
-                            </AiPanelErrorBoundary>
+                            {/* AI Skill selection */}
+                            <div className="rounded-xl border border-sky-200 bg-white/80 p-4 shadow-sm dark:border-sky-900/70 dark:bg-slate-950/70">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                                  Select AI Skill (Recommended)
+                                </Label>
+                                <a
+                                  href="/ai-skills"
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs font-medium text-sky-600 underline hover:text-sky-700 dark:text-sky-400"
+                                >
+                                  Manage Skills ↗
+                                </a>
+                              </div>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Select a taught skill with predefined role, services, business knowledge, and continuous chat.
+                              </p>
+                              <div className="mt-3">
+                                <Select
+                                  value={aiSkillId || "__none__"}
+                                  onValueChange={(val) => {
+                                    const next =
+                                      !val || val === "__none__" ? "" : val;
+                                    setAiSkillId(next);
+                                    if (next) setOpenAiEnabled(true);
+                                  }}
+                                >
+                                  <SelectTrigger className="rounded-xl bg-white dark:bg-slate-900">
+                                    <SelectValue placeholder="No skill (Custom prompt below)" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__none__">
+                                      No skill (Use custom prompt below)
+                                    </SelectItem>
+                                    {aiSkills
+                                      .filter((s) => s.active)
+                                      .map((s) => (
+                                        <SelectItem key={s.id} value={s.id}>
+                                          {s.name}
+                                          {s.continuousChat ? " · Continuous Chat" : ""}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {selectedSkill ? (
+                                <div className="mt-3 space-y-2 rounded-lg border border-sky-100 bg-sky-50/50 p-3 text-xs dark:border-sky-900/50 dark:bg-sky-950/30">
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                      {selectedSkill.name}
+                                    </span>
+                                    {selectedSkill.continuousChat ? (
+                                      <Badge
+                                        variant="secondary"
+                                        className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-300"
+                                      >
+                                        Continuous Chat Active
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="text-[10px]">
+                                        Single Turn
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-slate-600 dark:text-slate-400">
+                                    <strong className="font-medium text-slate-800 dark:text-slate-200">
+                                      Role:
+                                    </strong>{" "}
+                                    {selectedSkill.rolePrompt}
+                                  </p>
+                                  <p className="text-slate-600 dark:text-slate-400">
+                                    <strong className="font-medium text-slate-800 dark:text-slate-200">
+                                      Services:
+                                    </strong>{" "}
+                                    {selectedSkill.servicesDescription}
+                                  </p>
+                                  <p className="text-slate-600 dark:text-slate-400">
+                                    <strong className="font-medium text-slate-800 dark:text-slate-200">
+                                      Knowledge:
+                                    </strong>{" "}
+                                    {selectedSkill.businessKnowledge}
+                                  </p>
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="space-y-2 pt-2">
+                              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                {selectedSkill
+                                  ? "Optional Overrides & Fallback Credential"
+                                  : "Custom AI Settings"}
+                              </p>
+                              <AiPanelErrorBoundary label="AI settings panel crashed.">
+                                <CredentialModelFields
+                                  credentials={credentials}
+                                  value={openAi}
+                                  onChange={setOpenAi}
+                                  showContinuousChat={!selectedSkill}
+                                />
+                              </AiPanelErrorBoundary>
+                            </div>
                           </div>
                         ) : (
                           <p className="mt-4 text-sm text-muted-foreground">
@@ -1115,10 +1228,14 @@ export function CreateAutoReplyRuleDialog({
                             AI
                           </p>
                           <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
-                            {openAiEnabled
-                              ? `On · ${selectedCredential?.name ?? "Credential selected"}${
-                                  openAi.continuousChat
-                                    ? " · continuous chat"
+                            {openAiEnabled || Boolean(aiSkillId)
+                              ? `On · ${
+                                  selectedSkill
+                                    ? `Skill: ${selectedSkill.name}`
+                                    : selectedCredential?.name ?? "Custom AI Settings"
+                                }${
+                                  selectedSkill?.continuousChat || openAi.continuousChat
+                                    ? " · Continuous chat enabled"
                                     : ""
                                 }`
                               : "Off"}
