@@ -635,7 +635,7 @@ function AiSkillFormDialog({
                 <Input
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder="e.g. gemini-2.5-flash"
+                  placeholder="e.g. gemini-flash-latest"
                   className="rounded-xl bg-white dark:bg-slate-950"
                 />
               </div>
