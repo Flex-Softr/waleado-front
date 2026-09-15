@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   title: "FlexoWhats — WhatsApp automation",
   description:
     "Manage devices, campaigns, auto-replies, and chatbots for WhatsApp.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({

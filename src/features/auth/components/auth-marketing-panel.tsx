@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 
 const FEATURES = [
   "Official API & QR-based connectivity",
@@ -22,12 +23,16 @@ export function AuthMarketingPanel() {
       <div className="relative z-10 flex flex-1 flex-col">
         <Link
           href="/"
-          className="mb-10 inline-flex w-fit items-center gap-2.5 text-[15px] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-80"
+          className="mb-10 inline-flex w-fit items-center gap-2.5 transition-opacity hover:opacity-80"
         >
-          <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-            <MessageCircle className="size-5" strokeWidth={2} />
-          </span>
-          FlexoWhats
+          <Image
+            src="/logo.png"
+            alt="LeadWhats"
+            width={160}
+            height={44}
+            className="h-9 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <div className="max-w-md flex-1 space-y-8 lg:mt-6">
