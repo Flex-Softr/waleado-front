@@ -99,7 +99,7 @@ export function AppHeader() {
             >
               <div className="relative flex size-8 shrink-0 items-center justify-center">
                 <Avatar className="size-8 ring-1 ring-border/80">
-                  <AvatarFallback className="bg-gradient-to-tr from-[#8d6ae8] to-[#5d35bd] text-xs font-semibold text-white">
+                  <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-blue-600 text-xs font-semibold text-white">
                     {authUser ? userInitials(authUser) : "?"}
                   </AvatarFallback>
                 </Avatar>
@@ -177,7 +177,7 @@ export function AppHeader() {
               <DropdownMenuLabel className="p-2.5 font-normal">
                 <div className="flex items-center gap-2.5">
                   <Avatar className="size-9 ring-1 ring-border/80">
-                    <AvatarFallback className="bg-gradient-to-tr from-[#8d6ae8] to-[#5d35bd] text-xs font-semibold text-white">
+                    <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-blue-600 text-xs font-semibold text-white">
                       {authUser ? userInitials(authUser) : "?"}
                     </AvatarFallback>
                   </Avatar>

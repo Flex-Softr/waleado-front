@@ -274,12 +274,12 @@ export function ProfileClient() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 pb-12">
       {/* Top Profile Summary Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50/50 to-violet-50/30 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/80 dark:to-violet-950/20 sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50/50 to-emerald-50/30 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:via-slate-900/80 dark:to-emerald-950/20 sm:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-5">
             <div className="relative">
-              <Avatar className="size-20 border-2 border-white shadow-md ring-2 ring-violet-500/20 dark:border-slate-800 dark:ring-violet-400/20 sm:size-24">
-                <AvatarFallback className="bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 text-2xl font-bold text-white sm:text-3xl">
+              <Avatar className="size-20 border-2 border-white shadow-md ring-2 ring-emerald-500/20 dark:border-slate-800 dark:ring-emerald-400/20 sm:size-24">
+                <AvatarFallback className="bg-gradient-to-br from-emerald-500 to-blue-600 text-2xl font-bold text-white sm:text-3xl">
                   {userInitials(user)}
                 </AvatarFallback>
               </Avatar>
@@ -354,7 +354,7 @@ export function ProfileClient() {
           <Card className="rounded-xl border border-border bg-white shadow-xs dark:border-slate-800 dark:bg-slate-950">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
               <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-400">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
                   <User className="size-4" />
                 </div>
                 <div>
@@ -448,7 +448,7 @@ export function ProfileClient() {
                   type="submit"
                   size="sm"
                   disabled={!isProfileDirty || isSavingProfile}
-                  className="gap-2 rounded-lg bg-violet-600 px-5 text-xs font-medium text-white shadow-sm hover:bg-violet-700"
+                  className="gap-2 rounded-lg bg-primary px-5 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
                 >
                   {isSavingProfile ? (
                     <>
@@ -470,7 +470,7 @@ export function ProfileClient() {
           <Card className="rounded-xl border border-border bg-white shadow-xs dark:border-slate-800 dark:bg-slate-950">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/30">
               <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
                   <KeyRound className="size-4" />
                 </div>
                 <div>
@@ -614,7 +614,7 @@ export function ProfileClient() {
                     (hasExistingPassword && !currentPassword) ||
                     isSavingPassword
                   }
-                  className="gap-2 rounded-lg bg-indigo-600 px-5 text-xs font-medium text-white shadow-sm hover:bg-indigo-700"
+                  className="gap-2 rounded-lg bg-blue-600 px-5 text-xs font-medium text-white shadow-sm hover:bg-blue-700"
                 >
                   {isSavingPassword ? (
                     <>

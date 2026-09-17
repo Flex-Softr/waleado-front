@@ -242,7 +242,7 @@ export function BillingClient() {
       ) : null}
 
       <section className="grid gap-5 xl:grid-cols-12">
-        <div className="relative min-h-[260px] overflow-hidden rounded-lg bg-gradient-to-br from-neutral-800 via-neutral-700 to-neutral-600 px-6 py-7 text-white shadow-sm sm:px-8 xl:col-span-7">
+        <div className="relative min-h-[260px] overflow-hidden rounded-xl border border-emerald-900/30 bg-gradient-to-br from-slate-900 via-[#0b1c2d] to-[#043324] px-6 py-7 text-white shadow-md sm:px-8 xl:col-span-7">
           <div className="relative z-10 max-w-xl">
             <Badge className="mb-5 rounded-full border-white/25 bg-white/16 px-3 py-1 text-xs font-semibold text-white shadow-none">
               <Sparkles className="mr-1 size-3.5" />
@@ -315,10 +315,10 @@ export function BillingClient() {
                 type="button"
                 onClick={() => setGateway(g.id)}
                 className={cn(
-                  "rounded-lg border-0 p-4 text-left shadow-[inset_0_0_0_1px_rgba(110,69,200,0.1)] transition-all",
+                  "rounded-lg border border-slate-200/80 p-4 text-left transition-all dark:border-slate-800",
                   gateway === g.id
-                    ? "bg-muted ring-2 ring-ring/30"
-                    : "bg-[#faf8ff] hover:bg-muted dark:bg-slate-950 dark:hover:bg-slate-800",
+                    ? "bg-emerald-50/70 border-emerald-500/50 ring-2 ring-emerald-500/30 dark:bg-emerald-950/30 dark:border-emerald-500/40"
+                    : "bg-slate-50/60 hover:bg-slate-100/70 dark:bg-slate-950 dark:hover:bg-slate-800/80",
                   !g.configured && "opacity-70"
                 )}
               >
@@ -364,7 +364,7 @@ export function BillingClient() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2 rounded-lg bg-[#faf8ff] p-4 dark:bg-slate-950">
+              <div className="space-y-2 rounded-lg bg-slate-50/60 p-4 dark:bg-slate-950">
                 <Label htmlFor="cus-phone" className="text-xs font-semibold">
                   Contact phone (SSLCommerz · Bangladesh)
                 </Label>

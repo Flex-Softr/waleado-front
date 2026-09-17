@@ -22,7 +22,7 @@ export function WelcomeBanner({
   const who = user ? userDisplayName(user) : "…";
 
   return (
-    <div className="relative min-h-[230px] overflow-hidden rounded-lg bg-gradient-to-br from-neutral-800 via-neutral-700 to-neutral-600 px-6 py-7 text-white shadow-sm sm:px-8 sm:py-8">
+    <div className="relative min-h-[230px] overflow-hidden rounded-xl border border-emerald-900/30 bg-gradient-to-br from-slate-900 via-[#0b1c2d] to-[#043324] px-6 py-7 text-white shadow-md sm:px-8 sm:py-8">
       <div className="relative z-10 max-w-md space-y-4">
         <h2 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
           Manage your messaging in one touch
