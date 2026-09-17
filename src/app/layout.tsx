@@ -25,7 +25,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FlexoWhats — WhatsApp automation",
+  title: "Waleado — WhatsApp automation",
   description:
     "Manage devices, campaigns, auto-replies, and chatbots for WhatsApp.",
   icons: {

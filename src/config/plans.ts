@@ -19,7 +19,7 @@ export const BILLING_PLANS: BillingPlanDefinition[] = [
   {
     id: "free",
     name: "3-Day Free Trial",
-    description: "Full access to FlexoWhats features for 3 days on your account.",
+    description: "Full access to Waleado features for 3 days on your account.",
     priceUsd: 0,
     priceLabel: "$0",
     periodLabel: "3-day trial",

@@ -98,11 +98,11 @@ export const PAGE_META = {
   },
   "/login": {
     title: "Sign in",
-    description: "Access your FlexoWhats workspace.",
+    description: "Access your Waleado workspace.",
   },
   "/register": {
     title: "Create account",
-    description: "Start automating WhatsApp with FlexoWhats.",
+    description: "Start automating WhatsApp with Waleado.",
   },
 } as const satisfies Record<string, PageMeta>;
 
@@ -132,7 +132,7 @@ export function getPageMeta(pathname: string): PageMeta {
     };
   }
   return {
-    title: "FlexoWhats",
+    title: "Waleado",
     description: "WhatsApp automation for your team.",
   };
 }

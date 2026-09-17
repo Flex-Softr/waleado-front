@@ -1,25 +1,25 @@
-# Local PostgreSQL for FlexoWhats (matches repo root `.env` DATABASE_URL defaults).
+# Local PostgreSQL for Waleado (matches repo root `.env` DATABASE_URL defaults).
 # Usage: docker compose up -d
 # Then: cd server && npx prisma migrate deploy && npm run db:seed
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: flexowhats-postgres
+    container_name: waleado-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: flexowhats
+      POSTGRES_DB: waleado
     volumes:
-      - flexowhats_pgdata:/var/lib/postgresql/data
+      - waleado_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d flexowhats"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d waleado"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  flexowhats_pgdata:
+  waleado_pgdata:

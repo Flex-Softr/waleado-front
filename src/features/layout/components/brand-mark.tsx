@@ -7,11 +7,11 @@ export function BrandMark({ isCollapsed }: { isCollapsed?: boolean }) {
       <Link
         href="/"
         className="flex items-center justify-center w-full min-w-0 transition-opacity hover:opacity-90"
-        title="LeadWhats"
+        title="Waleado"
       >
         <Image
           src="/icon.png"
-          alt="LeadWhats"
+          alt="Waleado"
           width={36}
           height={36}
           className="size-9 rounded-lg object-contain"
@@ -28,7 +28,7 @@ export function BrandMark({ isCollapsed }: { isCollapsed?: boolean }) {
     >
       <Image
         src="/logo.png"
-        alt="LeadWhats"
+        alt="Waleado"
         width={140}
         height={40}
         className="h-8 w-auto max-w-[170px] object-contain"

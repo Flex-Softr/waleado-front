@@ -17,5 +17,5 @@ console.log("--- files ---");
 for (const f of r)
   if (f.messages.length)
     console.log(
-      f.messages.length + "  " + f.filePath.split("LeadWhats.app-Frontend").pop(),
+      f.messages.length + "  " + f.filePath.split("waleado-front").pop(),
     );

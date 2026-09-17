@@ -15,7 +15,7 @@ const SidebarContext = React.createContext<SidebarContextType | undefined>(
   undefined
 );
 
-const STORAGE_KEY = "flexowhats:sidebar:collapsed";
+const STORAGE_KEY = "waleado:sidebar:collapsed";
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsedState] = React.useState<boolean>(false);

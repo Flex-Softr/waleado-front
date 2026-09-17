@@ -468,7 +468,7 @@ export function DevicesClient() {
             <span className="font-semibold text-foreground">
               {deleteTarget?.name}
             </span>{" "}
-            and its WhatsApp session from FlexoWhats. This cannot be undone.
+            and its WhatsApp session from Waleado. This cannot be undone.
           </>
         }
         confirmLabel="Delete device"

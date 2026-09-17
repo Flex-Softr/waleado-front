@@ -27,7 +27,7 @@ export function AuthMarketingPanel() {
         >
           <Image
             src="/logo.png"
-            alt="LeadWhats"
+            alt="Waleado"
             width={160}
             height={44}
             className="h-9 w-auto object-contain"
@@ -59,7 +59,7 @@ export function AuthMarketingPanel() {
         </div>
 
         <p className="relative z-10 mt-10 text-xs text-muted-foreground lg:mt-auto">
-          © {new Date().getFullYear()} FlexoWhats. All rights reserved.
+          © {new Date().getFullYear()} Waleado. All rights reserved.
         </p>
       </div>
     </div>

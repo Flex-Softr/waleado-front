@@ -402,7 +402,7 @@ export const OPEN_API_ENDPOINTS: OpenApiEndpointDoc[] = [
   "name": "August promo",
   "deviceIds": ["00000000-0000-0000-0000-000000000001"],
   "kind": "text",
-  "bodyText": "Hello from FlexoWhats!",
+  "bodyText": "Hello from Waleado!",
   "selectionMode": "groups",
   "groupIds": ["00000000-0000-0000-0000-000000000099"],
   "scheduleType": "immediate",

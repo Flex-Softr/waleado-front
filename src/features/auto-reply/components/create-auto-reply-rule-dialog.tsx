@@ -96,7 +96,7 @@ const WIZARD_STEPS = [
   {
     id: "message",
     title: "Message",
-    blurb: "Choose how FlexoWhats should reply when the rule matches.",
+    blurb: "Choose how Waleado should reply when the rule matches.",
   },
   {
     id: "ai",

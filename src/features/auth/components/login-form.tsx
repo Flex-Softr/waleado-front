@@ -154,8 +154,8 @@ export function LoginForm() {
     mode === "forgot"
       ? "Enter your account email and we will send a password reset link."
       : mode === "reset"
-        ? "Choose a new password for your FlexoWhats account."
-        : "Welcome back — use your FlexoWhats account to open the dashboard.";
+        ? "Choose a new password for your Waleado account."
+        : "Welcome back — use your Waleado account to open the dashboard.";
 
   return (
     <div className="w-full">
