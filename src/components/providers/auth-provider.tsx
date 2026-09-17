@@ -9,9 +9,12 @@ import {
   setAccessToken,
 } from "@/lib/api";
 import {
-  clearAuthSessionMarker,
+  clearAuthSession,
+  getStoredAuthSession,
   hasAuthSessionMarker,
-  markAuthSessionActive,
+  saveAuthSession,
+  updateStoredUser,
+  updateStoredWorkspace,
 } from "@/lib/auth-session";
 import {
   loginRequest,
@@ -46,8 +49,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isBootstrapping, setIsBootstrapping] = React.useState(true);
 
   const logout = React.useCallback(async () => {
-    await logoutRequest();
-    clearAuthSessionMarker();
+    try {
+      await logoutRequest();
+    } catch {
+      /* ignore */
+    }
+    clearAuthSession();
     setAccessToken(null);
     setUser(null);
     setWorkspace(null);
@@ -59,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
-    clearAuthSessionMarker();
+    clearAuthSession();
     setAccessToken(null);
     setUser(null);
     setWorkspace(null);
@@ -67,10 +74,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateUser = React.useCallback((updated: AuthUser) => {
     setUser(updated);
+    updateStoredUser(updated);
   }, []);
 
   const updateWorkspace = React.useCallback((updated: AuthWorkspace) => {
     setWorkspace(updated);
+    updateStoredWorkspace(updated);
   }, []);
 
   React.useEffect(() => {
@@ -83,22 +92,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        // 1. Check if we have an unexpired stored session
+        const stored = getStoredAuthSession();
+        if (stored && !isAccessTokenExpired(stored.accessToken)) {
+          setAccessToken(stored.accessToken);
+          setUser(stored.user);
+          setWorkspace(stored.workspace);
+          setIsBootstrapping(false);
+
+          // Silently refresh in the background to rotate tokens/sync state
+          void (async () => {
+            const fresh = await refreshAccessToken();
+            if (fresh && !cancelled) {
+              setUser(fresh.user);
+              setWorkspace(fresh.workspace);
+            }
+          })();
+          return;
+        }
+
+        // 2. Otherwise try refresh
         const data = await refreshAccessToken();
         if (cancelled) return;
         if (data) {
-          markAuthSessionActive();
+          saveAuthSession(data);
           setUser(data.user);
           setWorkspace(data.workspace);
         } else {
-          clearAuthSessionMarker();
-          setUser(null);
-          setWorkspace(null);
+          // If existing token is still valid, don't wipe it
+          const token = getAccessToken();
+          if (!token || isAccessTokenExpired(token)) {
+            clearAuthSession();
+            setUser(null);
+            setWorkspace(null);
+          }
         }
       } catch {
         if (!cancelled) {
-          clearAuthSessionMarker();
-          setUser(null);
-          setWorkspace(null);
+          const token = getAccessToken();
+          if (!token || isAccessTokenExpired(token)) {
+            clearAuthSession();
+            setUser(null);
+            setWorkspace(null);
+          }
         }
       } finally {
         if (!cancelled) setIsBootstrapping(false);
@@ -133,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = React.useCallback(async (email: string, password: string) => {
     const data = await loginRequest(email, password);
-    markAuthSessionActive();
+    saveAuthSession(data);
     setUser(data.user);
     setWorkspace(data.workspace);
     return data;
@@ -142,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = React.useCallback(
     async (input: { email: string; password: string; name?: string }) => {
       const data = await registerRequest(input);
-      markAuthSessionActive();
+      saveAuthSession(data);
       setUser(data.user);
       setWorkspace(data.workspace);
       return data;

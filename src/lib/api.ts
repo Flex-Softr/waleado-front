@@ -1,6 +1,10 @@
 import type { AuthSessionPayload } from "@/types/auth";
 import { getApiBaseUrl } from "@/lib/api-config";
-import { hasAuthSessionMarker } from "@/lib/auth-session";
+import {
+  getStoredAccessToken,
+  hasAuthSessionMarker,
+  saveAuthSession,
+} from "@/lib/auth-session";
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<AuthSessionPayload | null> | null = null;
@@ -10,7 +14,15 @@ export function setAccessToken(token: string | null): void {
 }
 
 export function getAccessToken(): string | null {
-  return accessToken;
+  if (accessToken && !isAccessTokenExpired(accessToken)) {
+    return accessToken;
+  }
+  const stored = getStoredAccessToken();
+  if (stored && !isAccessTokenExpired(stored)) {
+    accessToken = stored;
+    return stored;
+  }
+  return null;
 }
 
 export function isAccessTokenExpired(token: string, nowMs = Date.now()): boolean {
@@ -74,14 +86,21 @@ export async function refreshAccessToken(): Promise<AuthSessionPayload | null> {
         credentials: "include",
       });
       if (!res.ok) {
-        accessToken = null;
+        const current = getAccessToken();
+        if (!current) {
+          accessToken = null;
+        }
         return null;
       }
       const data = (await res.json()) as AuthSessionPayload;
       accessToken = data.accessToken;
+      saveAuthSession(data);
       return data;
     } catch {
-      accessToken = null;
+      const current = getAccessToken();
+      if (!current) {
+        accessToken = null;
+      }
       return null;
     } finally {
       refreshPromise = null;

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { refreshAccessToken } from "@/lib/api";
-import { markAuthSessionActive } from "@/lib/auth-session";
+import { saveAuthSession } from "@/lib/auth-session";
 import { isSafeInternalPath } from "@/lib/safe-redirect";
 import { useAuth } from "@/components/providers/auth-provider";
 
@@ -42,7 +42,7 @@ export function GoogleOAuthCallbackClient() {
         return;
       }
 
-      markAuthSessionActive();
+      saveAuthSession(session);
       updateUser(session.user);
       updateWorkspace(session.workspace);
       const next = searchParams.get("next");

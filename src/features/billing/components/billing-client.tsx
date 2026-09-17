@@ -78,6 +78,34 @@ export function BillingClient() {
     else if (st?.configured) setGateway("stripe");
   }, [paymentGateways]);
 
+  React.useEffect(() => {
+    const payment = searchParams.get("payment");
+    const canceled = searchParams.get("canceled");
+    if (payment === "cancelled" || payment === "canceled" || canceled === "1") {
+      toast.info("Payment cancelled", {
+        description: "Your transaction was cancelled. No charges were made.",
+      });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      url.searchParams.delete("canceled");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    } else if (payment === "failed" || payment === "expired") {
+      toast.error("Payment was not completed", {
+        description: `Payment status: ${payment}. You can try again or choose another method.`,
+      });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    } else if (payment === "confirm_failed" || payment === "invalid") {
+      toast.error("Payment status error", {
+        description: "Unable to verify the transaction. Please contact support if your account was debited.",
+      });
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
+  }, [searchParams]);
+
   async function startUpgrade(target: PlanId) {
     if (!isPaidPlan(target)) return;
     if (gateway === "sslcommerz" && !sslReady) {
