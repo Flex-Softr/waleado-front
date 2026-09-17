@@ -57,13 +57,13 @@ export function DashboardCharts({ barSeries, lineSeries }: DashboardChartsProps)
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="rounded-lg border-0 bg-card shadow-sm">
-        <CardHeader className="flex flex-col gap-2 space-y-0 px-5 pb-1 pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="rounded-xl border border-border/70 bg-card shadow-xs transition-all duration-200 hover:border-border">
+        <CardHeader className="flex flex-col gap-2 space-y-0 px-5 pb-2 pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-0.5">
-            <CardTitle className="text-base font-semibold text-card-foreground">
+            <CardTitle className="text-sm font-semibold text-card-foreground">
               Message volume
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
+            <CardDescription className="text-xs">
               Outbound WhatsApp traffic
             </CardDescription>
           </div>
@@ -76,7 +76,7 @@ export function DashboardCharts({ barSeries, lineSeries }: DashboardChartsProps)
               { value: "12", label: "12 months" },
             ]}
           >
-            <SelectTrigger className="h-9 w-[132px] rounded-lg border-0 bg-muted text-xs text-foreground sm:text-sm">
+            <SelectTrigger className="h-8 w-[124px] rounded-lg border border-border/60 bg-muted/50 text-xs text-foreground">
               <SelectValue placeholder="Range" />
             </SelectTrigger>
             <SelectContent>
@@ -131,14 +131,14 @@ export function DashboardCharts({ barSeries, lineSeries }: DashboardChartsProps)
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg border-0 bg-card shadow-sm">
-        <CardHeader className="space-y-0.5 px-5 pb-1 pt-5">
-          <CardTitle className="text-base font-semibold text-card-foreground">
+      <Card className="rounded-xl border border-border/70 bg-card shadow-xs transition-all duration-200 hover:border-border">
+        <CardHeader className="space-y-0.5 px-5 pb-2 pt-5">
+          <CardTitle className="text-sm font-semibold text-card-foreground">
             Channel mix
           </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Campaign, direct text, template, live chat (daily)
-            </CardDescription>
+          <CardDescription className="text-xs">
+            Campaign, direct text, template, live chat (daily)
+          </CardDescription>
         </CardHeader>
         <CardContent className="h-[250px] px-5 pb-5 pt-1">
           <ResponsiveContainer width="100%" height="100%">

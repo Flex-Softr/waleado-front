@@ -7,7 +7,6 @@ import { DashboardChartsLazy } from "@/features/dashboard/components/dashboard-c
 import { DashboardKpiCard } from "@/features/dashboard/components/dashboard-kpi-card";
 import { SummaryStatCard } from "@/features/dashboard/components/summary-stat-card";
 import { SystemStatusBar } from "@/features/dashboard/components/system-status-bar";
-import { WelcomeBanner } from "@/features/dashboard/components/welcome-banner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSessionIdentity } from "@/hooks/use-session-identity";
@@ -94,28 +93,27 @@ export function DashboardHome() {
 
   if (showSkeleton) {
     return (
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 lg:gap-6">
-        <div className="h-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-800/80" />
-        <div className="h-28 animate-pulse rounded-2xl bg-muted/40 dark:bg-muted/40" />
-        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 lg:gap-6">
+        <div className="h-14 animate-pulse rounded-xl bg-slate-200/80 dark:bg-slate-800/80" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-32 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70"
+              className="h-32 animate-pulse rounded-xl bg-slate-200/70 dark:bg-slate-800/70"
             />
           ))}
         </div>
-        <div className="grid min-h-[308px] gap-3 sm:gap-4 lg:grid-cols-2">
-          <div className="min-h-[240px] animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70" />
-          <div className="min-h-[240px] animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70" />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="h-40 animate-pulse rounded-2xl bg-slate-200/70 dark:bg-slate-800/70"
+              className="h-44 animate-pulse rounded-xl bg-slate-200/70 dark:bg-slate-800/70"
             />
           ))}
+        </div>
+        <div className="grid min-h-[308px] gap-4 lg:grid-cols-2">
+          <div className="min-h-[260px] animate-pulse rounded-xl bg-slate-200/70 dark:bg-slate-800/70" />
+          <div className="min-h-[260px] animate-pulse rounded-xl bg-slate-200/70 dark:bg-slate-800/70" />
         </div>
       </div>
     );
@@ -123,7 +121,7 @@ export function DashboardHome() {
 
   if (error && !data) {
     return (
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="mx-auto w-full max-w-[1500px]">
         <Card className="rounded-xl border-red-200 bg-red-50/90 dark:border-red-900 dark:bg-red-950/40">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
             <div className="flex gap-3">
@@ -168,27 +166,11 @@ export function DashboardHome() {
         onRefresh={() => void load(true)}
       />
 
-      <div className="grid gap-5 xl:grid-cols-12">
-        <div className="xl:col-span-7">
-          <WelcomeBanner
-            devicesOnline={data.devicesOnline}
-            messagesToday={data.messagesToday}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:col-span-5">
-          {data.kpis.slice(0, 4).map((k) => (
-            <DashboardKpiCard key={k.id} data={k} />
-          ))}
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        {data.kpis.map((k) => (
+          <DashboardKpiCard key={k.id} data={k} />
+        ))}
       </div>
-
-      {data.kpis.length > 4 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {data.kpis.slice(4).map((k) => (
-            <DashboardKpiCard key={k.id} data={k} />
-          ))}
-        </div>
-      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {data.summaries.map((s) => (

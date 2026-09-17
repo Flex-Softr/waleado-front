@@ -12,9 +12,9 @@ export function BrandMark({ isCollapsed }: { isCollapsed?: boolean }) {
         <Image
           src="/icon.png"
           alt="Waleado"
-          width={36}
-          height={36}
-          className="size-9 rounded-lg object-contain"
+          width={44}
+          height={44}
+          className="size-10 sm:size-11 rounded-lg object-contain"
           priority
         />
       </Link>
@@ -30,18 +30,18 @@ export function BrandMark({ isCollapsed }: { isCollapsed?: boolean }) {
       <Image
         src="/logo.png"
         alt="Waleado"
-        width={140}
-        height={40}
-        className="h-8 w-auto max-w-[170px] object-contain dark:hidden"
+        width={180}
+        height={50}
+        className="h-10 sm:h-11 w-auto max-w-[190px] object-contain dark:hidden"
         priority
       />
       {/* Dark theme logo (light text) */}
       <Image
         src="/logo.white.png"
         alt="Waleado"
-        width={140}
-        height={40}
-        className="hidden h-8 w-auto max-w-[170px] object-contain dark:block"
+        width={180}
+        height={50}
+        className="hidden h-10 sm:h-11 w-auto max-w-[190px] object-contain dark:block"
         priority
       />
     </Link>

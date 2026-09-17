@@ -29,18 +29,18 @@ export function AuthMarketingPanel() {
           <Image
             src="/logo.png"
             alt="Waleado"
-            width={160}
-            height={44}
-            className="h-9 w-auto object-contain dark:hidden"
+            width={200}
+            height={56}
+            className="h-11 sm:h-12 w-auto object-contain dark:hidden"
             priority
           />
           {/* Dark theme logo (light text) */}
           <Image
             src="/logo.white.png"
             alt="Waleado"
-            width={160}
-            height={44}
-            className="hidden h-9 w-auto object-contain dark:block"
+            width={200}
+            height={56}
+            className="hidden h-11 sm:h-12 w-auto object-contain dark:block"
             priority
           />
         </Link>

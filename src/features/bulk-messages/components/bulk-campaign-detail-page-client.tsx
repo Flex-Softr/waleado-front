@@ -17,6 +17,7 @@ import {
   Play,
   RefreshCcw,
   Server,
+  ShieldCheck,
   Smartphone,
   Trash2,
   UserPlus,
@@ -87,6 +88,23 @@ type RecipientActionBusy =
   | "group_failed"
   | "group_replied"
   | null;
+
+function formatDateDisplay(dateStr: string): string {
+  try {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    if (y && m && d) {
+      const date = new Date(y, m - 1, d);
+      return date.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    }
+  } catch {
+    // fallback
+  }
+  return dateStr;
+}
 
 function statusBadgeClass(
   status: BulkCampaignDetailApi["campaign"]["status"]
@@ -187,7 +205,7 @@ export function BulkCampaignDetailPageClient({
   const router = useRouter();
   const [downloading, setDownloading] = React.useState(false);
   const [reportDownloading, setReportDownloading] = React.useState<
-    "csv" | "xlsx" | null
+    "csv" | "xlsx" | "daily_csv" | "daily_xlsx" | null
   >(null);
   const [detail, setDetail] = React.useState<BulkCampaignDetailApi | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -352,11 +370,20 @@ export function BulkCampaignDetailPageClient({
     }
   }
 
-  async function downloadReport(format: "csv" | "xlsx") {
-    setReportDownloading(format);
+  async function downloadReport(
+    format: "csv" | "xlsx",
+    type: "recipients" | "daily" = "recipients"
+  ) {
+    const downloadKey =
+      type === "daily"
+        ? format === "csv"
+          ? ("daily_csv" as const)
+          : ("daily_xlsx" as const)
+        : format;
+    setReportDownloading(downloadKey);
     try {
       const res = await apiFetch(
-        `/v1/bulk-campaigns/${campaignId}/report?format=${format}`
+        `/v1/bulk-campaigns/${campaignId}/report?format=${format}&type=${type}`
       );
       if (!res.ok) {
         toast.error("Report failed", {
@@ -371,12 +398,16 @@ export function BulkCampaignDetailPageClient({
       const filenameMatch = disposition?.match(/filename="([^"]+)"/i);
       a.href = url;
       a.download =
-        filenameMatch?.[1] ?? `bulk-campaign-${campaignId}-report.${format}`;
+        filenameMatch?.[1] ??
+        `bulk-campaign-${campaignId}-${type}-report.${format}`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Report exported", {
-        description: a.download,
-      });
+      toast.success(
+        type === "daily" ? "Daily report exported" : "Campaign report exported",
+        {
+          description: a.download,
+        }
+      );
     } finally {
       setReportDownloading(null);
     }
@@ -766,6 +797,144 @@ export function BulkCampaignDetailPageClient({
               privacy settings. Replied is based on inbound messages matched to
               this campaign.
             </p>
+
+            <Separator />
+
+            <Card size="sm" className="overflow-hidden rounded-xl border-border bg-card shadow-xs">
+              <CardHeader className="border-b border-border bg-muted/20 pb-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                      <Calendar className="size-4 text-primary" />
+                      Date-wise Performance &amp; Engagement
+                    </CardTitle>
+                    <CardDescription>
+                      Daily timeline of messages sent, delivered, seen by recipients, and customer replies.
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-md"
+                      disabled={reportDownloading !== null}
+                      onClick={() => void downloadReport("csv", "daily")}
+                    >
+                      {reportDownloading === "daily_csv" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Download className="size-3.5" />
+                      )}
+                      Daily CSV
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-md"
+                      disabled={reportDownloading !== null}
+                      onClick={() => void downloadReport("xlsx", "daily")}
+                    >
+                      {reportDownloading === "daily_xlsx" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Download className="size-3.5" />
+                      )}
+                      Daily XLSX
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200">
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-emerald-950 dark:text-emerald-100">
+                      Anti-Ban Safe Telemetry Active
+                    </p>
+                    <p className="leading-relaxed text-emerald-800/90 dark:text-emerald-300/90">
+                      Delivery status, read receipts (seen), and inbound replies are captured passively from WhatsApp WebSocket events and local database records. Zero active polling requests are sent to WhatsApp servers, keeping your accounts 100% safe from bans.
+                    </p>
+                  </div>
+                </div>
+
+                {detail.dateWiseStats && detail.dateWiseStats.length > 0 ? (
+                  <div className="overflow-x-auto rounded-lg border border-border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[140px]">Date</TableHead>
+                          <TableHead className="text-right">Sent</TableHead>
+                          <TableHead className="text-right">Delivered</TableHead>
+                          <TableHead className="text-right">Seen (Read)</TableHead>
+                          <TableHead className="text-right">Responded</TableHead>
+                          <TableHead className="text-right">Failed</TableHead>
+                          <TableHead className="text-right">Seen Rate</TableHead>
+                          <TableHead className="text-right">Reply Rate</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {detail.dateWiseStats.map((d) => (
+                          <TableRow key={d.date}>
+                            <TableCell className="font-medium">
+                              {formatDateDisplay(d.date)}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {d.sent}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <span className="font-medium">{d.delivered}</span>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <span className="font-medium text-blue-600 dark:text-blue-400">
+                                {d.seen}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                                {d.replied}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <span
+                                className={
+                                  d.failed > 0
+                                    ? "font-medium text-destructive"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {d.failed}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <Badge
+                                variant="outline"
+                                className="rounded-md font-mono text-[11px]"
+                              >
+                                {d.seenRate}%
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              <Badge
+                                variant="outline"
+                                className="rounded-md border-emerald-200 bg-emerald-50 font-mono text-[11px] text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                              >
+                                {d.replyRate}%
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    No date-wise records yet for this campaign.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             <Separator />
 

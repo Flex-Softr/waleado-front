@@ -200,6 +200,17 @@ export type BulkCampaignRecipientsResponse = {
   total: number;
 };
 
+export type BulkCampaignDailyStatApi = {
+  date: string;
+  sent: number;
+  delivered: number;
+  seen: number;
+  replied: number;
+  failed: number;
+  seenRate: number;
+  replyRate: number;
+};
+
 export type BulkCampaignDetailApi = {
   campaign: BulkCampaignListItemApi;
   template: { id: string; name: string; typeId: string } | null;
@@ -209,6 +220,7 @@ export type BulkCampaignDetailApi = {
   devices: BulkCampaignDeviceRowApi[];
   deviceSendStats: BulkCampaignDeviceSendStatsApi[];
   stats: BulkCampaignOutboundStatsApi;
+  dateWiseStats?: BulkCampaignDailyStatApi[];
   recentMessages: BulkCampaignRecentMessageApi[];
   recentRecipients: BulkCampaignRecipientApi[];
 };

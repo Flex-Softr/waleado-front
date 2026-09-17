@@ -8,22 +8,25 @@ import { Button } from "@/components/ui/button";
 
 const statusCopy: Record<
   SystemStatus,
-  { label: string; className: string }
+  { label: string; dotClass: string; badgeClass: string }
 > = {
   online: {
     label: "Online",
-    className:
-      "border-emerald-200/80 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200",
+    dotClass: "bg-emerald-500 animate-pulse",
+    badgeClass:
+      "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/80 dark:bg-emerald-950/70 dark:text-emerald-300",
   },
   offline: {
     label: "Offline",
-    className:
-      "border-red-200/80 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200",
+    dotClass: "bg-rose-500",
+    badgeClass:
+      "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/80 dark:bg-rose-950/70 dark:text-rose-300",
   },
   degraded: {
     label: "Degraded",
-    className:
-      "border-amber-200/80 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200",
+    dotClass: "bg-amber-500 animate-pulse",
+    badgeClass:
+      "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/80 dark:bg-amber-950/70 dark:text-amber-300",
   },
 };
 
@@ -41,33 +44,35 @@ export function SystemStatusBar({
   const cfg = statusCopy[status] ?? statusCopy.degraded;
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-card px-4 py-3 text-xs shadow-sm sm:flex-row sm:items-center sm:justify-between sm:text-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium text-slate-700 dark:text-slate-200">
+    <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card px-4 py-2.5 text-xs shadow-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <span className="font-semibold text-foreground">
           System Status:
         </span>
         <Badge
           variant="outline"
-          className={`rounded-md px-2 py-0 text-[11px] font-semibold sm:text-xs ${cfg.className}`}
+          className={`gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold sm:text-xs ${cfg.badgeClass}`}
         >
+          <span className={`size-1.5 rounded-full ${cfg.dotClass}`} />
           {cfg.label}
         </Badge>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500 dark:text-slate-400">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span>Last updated · {lastUpdated}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="link"
-            className="h-auto rounded-md p-0 text-xs sm:text-sm"
+            className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
             nativeButton={false}
             render={<Link href="/billing" />}
           >
             License
           </Button>
+          <span className="text-border">|</span>
           <Button
             type="button"
             variant="link"
-            className="h-auto rounded-md p-0 text-xs sm:text-sm"
+            className="h-auto p-0 text-xs font-medium text-primary hover:underline"
             onClick={() => {
               if (onRefresh) {
                 onRefresh();
