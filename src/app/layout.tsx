@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Nunito_Sans, Outfit } from "next/font/google";
+import { Geist_Mono, Outfit } from "next/font/google";
 
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { CanonicalRouteProvider } from "@/components/providers/canonical-route-provider";
@@ -10,18 +10,22 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const outfitHeading = Outfit({subsets:['latin'],variable:'--font-heading'});
-
-const nunitoSans = Nunito_Sans({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({
-  variable: "--font-inter",
+const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const outfitHeading = Outfit({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -43,10 +47,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", inter.variable, geistMono.variable, "font-sans", nunitoSans.variable, outfitHeading.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        "font-sans",
+        outfit.variable,
+        outfitHeading.variable,
+        geistMono.variable
+      )}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col font-sans">
         <script
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
           suppressHydrationWarning

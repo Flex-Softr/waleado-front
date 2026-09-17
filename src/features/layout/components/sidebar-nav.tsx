@@ -37,7 +37,7 @@ export function SidebarNav({
               ) : null
             ) : (
               group.title && (
-                <div className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 select-none">
+                <div className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/75 select-none">
                   {group.title}
                 </div>
               )
@@ -60,16 +60,16 @@ export function SidebarNav({
                     title={isCollapsed ? item.title : undefined}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "group flex h-9 cursor-pointer items-center rounded-lg text-sm font-medium transition-colors duration-150",
+                      "group flex h-9 cursor-pointer items-center rounded-lg text-sm font-bold transition-colors duration-150",
                       isCollapsed ? "justify-center px-2" : "gap-3 px-3",
                       active
-                        ? "bg-primary/10 font-semibold text-primary dark:bg-primary/20 dark:text-primary"
+                        ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
                         : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
                     <Icon
                       className="size-[18px] shrink-0"
-                      strokeWidth={active ? 2.2 : 1.8}
+                      strokeWidth={active ? 2.4 : 2}
                     />
                     {!isCollapsed && (
                       <span className="truncate">{item.title}</span>
