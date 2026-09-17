@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Sparkles, Wand2 } from "lucide-react";
 
 import { NodeMessageTypeCards } from "@/features/chatbot/components/node-message-type-cards";
 import type { MessageFormType } from "@/features/single-message/components/message-type-cards";
@@ -33,19 +33,41 @@ import { cn } from "@/lib/utils";
 const CALL_TYPE_OPTIONS: {
   value: CallResponderCallType;
   label: string;
+  description: string;
 }[] = [
-  { value: "received", label: "Received calls" },
-  { value: "outgoing", label: "Outgoing calls" },
-  { value: "missed", label: "Missed calls" },
-  { value: "rejected", label: "Rejected calls" },
+  {
+    value: "missed",
+    label: "Missed Calls",
+    description: "When a caller hangs up or call times out without answer",
+  },
+  {
+    value: "rejected",
+    label: "Rejected Calls",
+    description: "When a call is declined or busy",
+  },
+  {
+    value: "received",
+    label: "Received Calls",
+    description: "Follow up after answered calls",
+  },
+  {
+    value: "outgoing",
+    label: "Outgoing Calls",
+    description: "Follow up after you place a call",
+  },
 ];
+
+const DEFAULT_MISSED_CALL_TEXT =
+  "Hello! We noticed we missed your call. How can we help you? Please reply with your inquiry and we will get back to you shortly.";
 
 type CreateCallResponderRuleDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   devices: DeviceApiRecord[];
   templates: MessageTemplateApiRecord[];
-  onCreate: (input: {
+  initialRule?: CallResponderRule | null;
+  onSave: (input: {
+    id?: string;
     name: string;
     deviceId: string;
     callTypes: CallResponderCallType[];
@@ -53,7 +75,7 @@ type CreateCallResponderRuleDialogProps = {
     messageFormType: "text" | "template";
     messageBody?: string | null;
     templateId?: string | null;
-  }) => Promise<CallResponderRule>;
+  }) => Promise<CallResponderRule | void>;
 };
 
 export function CreateCallResponderRuleDialog({
@@ -61,14 +83,16 @@ export function CreateCallResponderRuleDialog({
   onOpenChange,
   devices,
   templates,
-  onCreate,
+  initialRule,
+  onSave,
 }: CreateCallResponderRuleDialogProps) {
+  const isEditing = Boolean(initialRule);
   const [name, setName] = React.useState("");
   const [deviceId, setDeviceId] = React.useState<string | null>(null);
   const [callTypes, setCallTypes] = React.useState<Set<CallResponderCallType>>(
     () => new Set(["missed", "rejected"])
   );
-  const [delayMinutes, setDelayMinutes] = React.useState("1");
+  const [delayMinutes, setDelayMinutes] = React.useState("0");
   const [messageFormType, setMessageFormType] =
     React.useState<MessageFormType>("text");
   const [messageBody, setMessageBody] = React.useState("");
@@ -77,15 +101,25 @@ export function CreateCallResponderRuleDialog({
 
   React.useEffect(() => {
     if (!open) return;
-    setName("");
-    setDeviceId(devices[0]?.id ?? null);
-    setCallTypes(new Set(["missed", "rejected"]));
-    setDelayMinutes("1");
-    setMessageFormType("text");
-    setMessageBody("");
-    setTemplateId(null);
+    if (initialRule) {
+      setName(initialRule.name);
+      setDeviceId(initialRule.deviceId);
+      setCallTypes(new Set(initialRule.callTypes));
+      setDelayMinutes(String(initialRule.responseDelayMinutes ?? 0));
+      setMessageFormType(initialRule.messageFormType);
+      setMessageBody(initialRule.messageBody ?? "");
+      setTemplateId(initialRule.templateId ?? null);
+    } else {
+      setName("Missed Call Auto-Responder");
+      setDeviceId(devices[0]?.id ?? null);
+      setCallTypes(new Set(["missed", "rejected"]));
+      setDelayMinutes("0");
+      setMessageFormType("text");
+      setMessageBody(DEFAULT_MISSED_CALL_TEXT);
+      setTemplateId(null);
+    }
     setPending(false);
-  }, [devices, open]);
+  }, [devices, initialRule, open]);
 
   React.useEffect(() => {
     if (messageFormType === "text") setTemplateId(null);
@@ -100,6 +134,10 @@ export function CreateCallResponderRuleDialog({
     });
   }
 
+  function insertTag(tag: string) {
+    setMessageBody((prev) => (prev ? `${prev} ${tag}` : tag));
+  }
+
   const messageOk =
     messageFormType === "text"
       ? messageBody.trim().length > 0
@@ -111,23 +149,22 @@ export function CreateCallResponderRuleDialog({
     callTypes.size > 0 &&
     messageOk;
 
-  async function handleCreate() {
+  async function handleSave() {
     if (!canSubmit || !deviceId) return;
     setPending(true);
     try {
-      const rule = await onCreate({
-      name: name.trim(),
-      deviceId,
-      callTypes: Array.from(callTypes),
-      responseDelayMinutes: Math.max(0, Number.parseInt(delayMinutes, 10) || 0),
-      messageFormType,
-      messageBody:
-        messageFormType === "text" ? messageBody.trim() : undefined,
-      templateId: messageFormType === "template" ? templateId : null,
+      await onSave({
+        id: initialRule?.id,
+        name: name.trim(),
+        deviceId,
+        callTypes: Array.from(callTypes),
+        responseDelayMinutes: Math.max(0, Number.parseInt(delayMinutes, 10) || 0),
+        messageFormType,
+        messageBody:
+          messageFormType === "text" ? messageBody.trim() : undefined,
+        templateId: messageFormType === "template" ? templateId : null,
       });
-      if (rule.id) {
-        onOpenChange(false);
-      }
+      onOpenChange(false);
     } finally {
       setPending(false);
     }
@@ -138,25 +175,22 @@ export function CreateCallResponderRuleDialog({
       <DialogContent
         showCloseButton
         className={cn(
-          "max-h-[min(94vh,820px)] max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-lg",
-          "border border-white/70 bg-white/95 shadow-2xl shadow-sm backdrop-blur-md",
-          "dark:border-slate-800 dark:bg-slate-950/95"
+          "max-h-[min(94vh,840px)] max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-xl",
+          "border border-border bg-card shadow-2xl backdrop-blur-md"
         )}
       >
-        <DialogHeader className="border-b border-slate-200/80 px-6 pb-4 pt-6 text-left sm:px-8 sm:pb-5 sm:pt-7 dark:border-slate-800">
-          <DialogTitle className="font-heading pr-8 text-xl font-semibold tracking-tight sm:text-2xl">
-            Create Rule
+        <DialogHeader className="border-b border-border/80 px-6 pb-4 pt-6 text-left sm:px-8 sm:pb-5 sm:pt-7">
+          <DialogTitle className="font-heading pr-8 text-xl font-bold tracking-tight sm:text-2xl text-foreground">
+            {isEditing ? "Edit Call Responder Rule" : "Create Call Responder Rule"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[min(62vh,560px)] space-y-5 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
+        <div className="max-h-[min(65vh,580px)] space-y-5 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-1">
-              <Label htmlFor="cr-name" className="text-sm font-semibold">
+              <Label htmlFor="cr-name" className="text-xs font-bold text-foreground">
                 Rule Name{" "}
-                <span className="font-normal text-red-600 dark:text-red-400">
-                  *
-                </span>
+                <span className="font-normal text-destructive">*</span>
               </Label>
               <Input
                 id="cr-name"
@@ -167,11 +201,9 @@ export function CreateCallResponderRuleDialog({
               />
             </div>
             <div className="space-y-2 sm:col-span-1">
-              <Label htmlFor="cr-session" className="text-sm font-semibold">
-                WhatsApp Session{" "}
-                <span className="font-normal text-red-600 dark:text-red-400">
-                  *
-                </span>
+              <Label htmlFor="cr-session" className="text-xs font-bold text-foreground">
+                WhatsApp Device / Session{" "}
+                <span className="font-normal text-destructive">*</span>
               </Label>
               <Select
                 value={deviceId ?? undefined}
@@ -196,57 +228,66 @@ export function CreateCallResponderRuleDialog({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-semibold">
-              Call Types to Respond To{" "}
-              <span className="font-normal text-red-600 dark:text-red-400">
-                *
-              </span>
+            <Label className="text-xs font-bold text-foreground">
+              Call Types to Trigger Automated Response{" "}
+              <span className="font-normal text-destructive">*</span>
             </Label>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {CALL_TYPE_OPTIONS.map((opt) => (
                 <label
                   key={opt.value}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200/90 bg-slate-50/50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/40"
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all",
+                    callTypes.has(opt.value)
+                      ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20 dark:bg-primary/10"
+                      : "border-border bg-muted/40 hover:bg-muted/70"
+                  )}
                 >
                   <input
                     type="checkbox"
                     checked={callTypes.has(opt.value)}
                     onChange={(e) => toggleCallType(opt.value, e.target.checked)}
-                    className="size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                    className="mt-0.5 size-4 rounded border-slate-300 text-primary focus:ring-primary/30"
                   />
-                  <span className="text-[15px] text-slate-800 dark:text-slate-200">
-                    {opt.label}
-                  </span>
+                  <div className="min-w-0">
+                    <span className="text-sm font-semibold text-foreground">
+                      {opt.label}
+                    </span>
+                    <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                      {opt.description}
+                    </p>
+                  </div>
                 </label>
               ))}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cr-delay" className="text-sm font-semibold">
-              Response delay
+            <Label htmlFor="cr-delay" className="text-xs font-bold text-foreground">
+              Response Delay
             </Label>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <Input
                 id="cr-delay"
                 type="number"
                 min={0}
+                max={1440}
                 value={delayMinutes}
                 onChange={(e) => setDelayMinutes(e.target.value)}
-                className="h-11 w-20 rounded-xl tabular-nums"
+                className="h-11 w-24 rounded-xl tabular-nums text-center font-bold"
               />
-              <span className="text-sm text-slate-600 dark:text-slate-400">
-                minute(s) after call ends
+              <span className="text-xs text-muted-foreground font-medium">
+                {delayMinutes === "0" || delayMinutes === ""
+                  ? "minute(s) (Instant — sends immediately when call ends)"
+                  : "minute(s) after call ends before sending message"}
               </span>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">
-              Message Type{" "}
-              <span className="font-normal text-red-600 dark:text-red-400">
-                *
-              </span>
+            <Label className="text-xs font-bold text-foreground">
+              Message Format{" "}
+              <span className="font-normal text-destructive">*</span>
             </Label>
             <NodeMessageTypeCards
               value={messageFormType}
@@ -255,28 +296,62 @@ export function CreateCallResponderRuleDialog({
           </div>
 
           {messageFormType === "text" ? (
-            <div className="space-y-2">
-              <Label htmlFor="cr-body" className="text-sm font-semibold">
-                Message Content{" "}
-                <span className="font-normal text-red-600 dark:text-red-400">
-                  *
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="cr-body" className="text-xs font-bold text-foreground">
+                  Custom Response Message{" "}
+                  <span className="font-normal text-destructive">*</span>
+                </Label>
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  Supports dynamic tags & spintax
                 </span>
-              </Label>
+              </div>
               <Textarea
                 id="cr-body"
                 value={messageBody}
                 onChange={(e) => setMessageBody(e.target.value)}
-                placeholder="Enter the message to send after the call..."
-                className="min-h-32 resize-y rounded-xl text-[15px] leading-relaxed"
+                placeholder="Enter custom message to send automatically when a missed call occurs..."
+                className="min-h-32 resize-y rounded-xl text-sm leading-relaxed p-3.5"
               />
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+                  <Sparkles className="size-3 text-primary" /> Insert tag:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => insertTag("{{phone}}")}
+                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                >
+                  {"{{phone}}"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertTag("{{name}}")}
+                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                >
+                  {"{{name}}"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertTag("{{time}}")}
+                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                >
+                  {"{{time}}"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertTag("{Hello|Hi|Hey}")}
+                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                >
+                  {"{Hello|Hi|Hey}"}
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="cr-template" className="text-sm font-semibold">
-                Template{" "}
-                <span className="font-normal text-red-600 dark:text-red-400">
-                  *
-                </span>
+              <Label htmlFor="cr-template" className="text-xs font-bold text-foreground">
+                Message Template{" "}
+                <span className="font-normal text-destructive">*</span>
               </Label>
               <Select
                 value={templateId ?? undefined}
@@ -299,20 +374,9 @@ export function CreateCallResponderRuleDialog({
               </Select>
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="cr-file" className="text-sm font-semibold">
-              Attachment (optional)
-            </Label>
-            <Input
-              id="cr-file"
-              type="file"
-              className="h-11 cursor-pointer rounded-xl bg-white dark:bg-slate-950"
-            />
-          </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-slate-200/80 bg-slate-50/60 px-6 py-5 sm:flex-row sm:justify-end sm:gap-3 sm:px-8 sm:py-6 dark:border-slate-800 dark:bg-slate-900/50">
+        <div className="flex flex-col-reverse gap-3 border-t border-border/80 bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-8">
           <Button
             type="button"
             variant="outline"
@@ -324,15 +388,23 @@ export function CreateCallResponderRuleDialog({
           <Button
             type="button"
             disabled={!canSubmit || pending}
-            className="h-11 gap-2 rounded-xl bg-blue-600 px-6 text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-500"
-            onClick={handleCreate}
+            className="h-11 gap-2 rounded-xl bg-primary px-6 font-bold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            onClick={handleSave}
           >
             {pending ? (
               <Loader2 className="size-4 animate-spin" />
+            ) : isEditing ? (
+              <Wand2 className="size-4" />
             ) : (
               <Plus className="size-4" />
             )}
-            {pending ? "Creating…" : "Create Rule"}
+            {pending
+              ? isEditing
+                ? "Saving…"
+                : "Creating…"
+              : isEditing
+              ? "Save Changes"
+              : "Create Rule"}
           </Button>
         </div>
       </DialogContent>

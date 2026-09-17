@@ -56,6 +56,8 @@ export function CallResponderClient() {
     []
   );
   const [loading, setLoading] = React.useState(true);
+  const [editingRule, setEditingRule] =
+    React.useState<CallResponderRule | null>(null);
   const [deleteTarget, setDeleteTarget] =
     React.useState<CallResponderRule | null>(null);
   const [search, setSearch] = React.useState("");
@@ -136,11 +138,12 @@ export function CallResponderClient() {
 
   function handleCallLogs() {
     toast.message("Call logs", {
-      description: "Wire this to your CDR or session history API.",
+      description: "Call responder automatically logs sent outbound replies into Live Chat and Outbound Messages.",
     });
   }
 
-  async function handleCreateRule(input: {
+  async function handleSaveRule(input: {
+    id?: string;
     name: string;
     deviceId: string;
     callTypes: CallResponderRule["callTypes"];
@@ -150,24 +153,68 @@ export function CallResponderClient() {
     templateId?: string | null;
   }) {
     try {
-      const data = await apiJson<CreateCallResponderRuleResponse>(
-        "/v1/call-responder-rules",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
-        }
-      );
-      setRules((prev) => [data.rule, ...prev]);
-      toast.success("Rule created", {
-        description: `“${data.rule.name}” is active.`,
-      });
-      return data.rule;
+      if (input.id) {
+        const data = await apiJson<{ rule: CallResponderRule }>(
+          `/v1/call-responder-rules/${input.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+          }
+        );
+        setRules((prev) =>
+          prev.map((r) => (r.id === data.rule.id ? data.rule : r))
+        );
+        toast.success("Rule updated", {
+          description: `“${data.rule.name}” has been updated.`,
+        });
+        return data.rule;
+      } else {
+        const data = await apiJson<CreateCallResponderRuleResponse>(
+          "/v1/call-responder-rules",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+          }
+        );
+        setRules((prev) => [data.rule, ...prev]);
+        toast.success("Rule created", {
+          description: `“${data.rule.name}” is active.`,
+        });
+        return data.rule;
+      }
     } catch (err) {
       const msg =
-        err instanceof ApiError ? err.message : "Could not create rule.";
-      toast.error("Create failed", { description: msg });
+        err instanceof ApiError ? err.message : "Could not save rule.";
+      toast.error("Save failed", { description: msg });
       throw err;
+    }
+  }
+
+  async function handleToggleRuleActive(
+    rule: CallResponderRule,
+    nextActive: boolean
+  ) {
+    try {
+      const data = await apiJson<{ rule: CallResponderRule }>(
+        `/v1/call-responder-rules/${rule.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: nextActive }),
+        }
+      );
+      setRules((prev) =>
+        prev.map((r) => (r.id === data.rule.id ? data.rule : r))
+      );
+      toast.success(
+        nextActive ? `“${rule.name}” enabled` : `“${rule.name}” paused`
+      );
+    } catch (err) {
+      const msg =
+        err instanceof ApiError ? err.message : "Could not update rule status.";
+      toast.error("Update failed", { description: msg });
     }
   }
 
@@ -221,7 +268,10 @@ export function CallResponderClient() {
               type="button"
               className="h-10 rounded-md bg-primary px-4 font-semibold text-white hover:bg-primary/90"
               disabled={!hasConnectedDevice || loading}
-              onClick={() => setCreateOpen(true)}
+              onClick={() => {
+                setEditingRule(null);
+                setCreateOpen(true);
+              }}
             >
               <Plus className="size-4" />
               Create Rule
@@ -322,7 +372,10 @@ export function CallResponderClient() {
                         type="button"
                         className="h-10 rounded-md bg-primary px-5 font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
                         disabled={devices.length === 0}
-                        onClick={() => setCreateOpen(true)}
+                        onClick={() => {
+                          setEditingRule(null);
+                          setCreateOpen(true);
+                        }}
                       >
                         <Plus className="size-4" />
                         Create Rule
@@ -338,6 +391,11 @@ export function CallResponderClient() {
             ) : (
               <CallResponderRulesTable
                 rules={pagedRules}
+                onEdit={(r) => {
+                  setEditingRule(r);
+                  setCreateOpen(true);
+                }}
+                onToggleActive={handleToggleRuleActive}
                 onDelete={(r) => setDeleteTarget(r)}
               />
             )}
@@ -348,10 +406,14 @@ export function CallResponderClient() {
 
       <CreateCallResponderRuleDialog
         open={createOpen}
-        onOpenChange={setCreateOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) setEditingRule(null);
+        }}
         devices={devices}
         templates={templates}
-        onCreate={handleCreateRule}
+        initialRule={editingRule}
+        onSave={handleSaveRule}
       />
 
       <ConfirmDestructiveDialog
