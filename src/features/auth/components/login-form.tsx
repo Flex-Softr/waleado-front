@@ -32,7 +32,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user, isBootstrapping } = useAuth();
-  const resetToken = searchParams.get("resetToken");
+  const resetToken = searchParams.get("resetToken") || searchParams.get("token");
 
   React.useEffect(() => {
     if (!isBootstrapping && user && !resetToken) {
@@ -46,6 +46,7 @@ export function LoginForm() {
   const [mode, setMode] = React.useState<LoginMode>(
     resetToken ? "reset" : "signin"
   );
+  const [activeToken, setActiveToken] = React.useState<string | null>(resetToken);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
@@ -53,7 +54,10 @@ export function LoginForm() {
   const [pending, setPending] = React.useState(false);
 
   React.useEffect(() => {
-    setMode(resetToken ? "reset" : "signin");
+    if (resetToken) {
+      setActiveToken(resetToken);
+      setMode("reset");
+    }
   }, [resetToken]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -94,10 +98,18 @@ export function LoginForm() {
       if (out.resetUrl) {
         setDevResetUrl(out.resetUrl);
       }
-      toast.success("Check your email", {
-        description:
-          "If that account exists, a password reset link has been sent.",
-      });
+      if (out.emailDelivered) {
+        toast.success("Check your email", {
+          description:
+            "A password reset link has been sent to your email address.",
+        });
+      } else {
+        toast.info("Password reset link ready", {
+          description: out.resetUrl
+            ? "Click the reset link below to set your new password."
+            : "If that account exists, a password reset link has been processed.",
+        });
+      }
     } catch (err) {
       const msg =
         err instanceof ApiError
@@ -110,7 +122,8 @@ export function LoginForm() {
   }
 
   async function onResetPassword() {
-    if (!resetToken) {
+    const effectiveToken = activeToken || resetToken;
+    if (!effectiveToken) {
       toast.error("Reset link is missing a token.");
       return;
     }
@@ -125,12 +138,14 @@ export function LoginForm() {
 
     setPending(true);
     try {
-      await resetPasswordRequest({ token: resetToken, password });
+      await resetPasswordRequest({ token: effectiveToken, password });
       toast.success("Password updated", {
         description: "You can sign in with your new password now.",
       });
       setPassword("");
       setConfirmPassword("");
+      setActiveToken(null);
+      setDevResetUrl(null);
       router.replace("/login");
       setMode("signin");
     } catch (err) {
