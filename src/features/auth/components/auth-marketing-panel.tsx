@@ -25,12 +25,22 @@ export function AuthMarketingPanel() {
           href="/"
           className="mb-10 inline-flex w-fit items-center gap-2.5 transition-opacity hover:opacity-80"
         >
+          {/* Light theme logo (dark text) */}
           <Image
             src="/logo.png"
             alt="Waleado"
             width={160}
             height={44}
-            className="h-9 w-auto object-contain"
+            className="h-9 w-auto object-contain dark:hidden"
+            priority
+          />
+          {/* Dark theme logo (light text) */}
+          <Image
+            src="/logo.white.png"
+            alt="Waleado"
+            width={160}
+            height={44}
+            className="hidden h-9 w-auto object-contain dark:block"
             priority
           />
         </Link>

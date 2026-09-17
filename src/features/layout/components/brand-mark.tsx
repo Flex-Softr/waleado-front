@@ -26,12 +26,22 @@ export function BrandMark({ isCollapsed }: { isCollapsed?: boolean }) {
       href="/"
       className="flex items-center gap-2.5 min-w-0 transition-opacity hover:opacity-90"
     >
+      {/* Light theme logo (dark text) */}
       <Image
         src="/logo.png"
         alt="Waleado"
         width={140}
         height={40}
-        className="h-8 w-auto max-w-[170px] object-contain"
+        className="h-8 w-auto max-w-[170px] object-contain dark:hidden"
+        priority
+      />
+      {/* Dark theme logo (light text) */}
+      <Image
+        src="/logo.white.png"
+        alt="Waleado"
+        width={140}
+        height={40}
+        className="hidden h-8 w-auto max-w-[170px] object-contain dark:block"
         priority
       />
     </Link>
