@@ -211,12 +211,22 @@ export function BulkMessagesClient() {
     void loadCampaigns();
   }, [loadCampaigns, userId, workspaceId, routeKey]);
 
+  const hasActiveCampaigns = React.useMemo(
+    () =>
+      campaigns.some(
+        (c) => c.status === "running" || c.status === "pending"
+      ),
+    [campaigns]
+  );
+
   React.useEffect(() => {
+    if (!hasActiveCampaigns) return;
     const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
       void loadCampaigns({ silent: true });
-    }, 3000);
+    }, 10_000);
     return () => window.clearInterval(id);
-  }, [loadCampaigns]);
+  }, [hasActiveCampaigns, loadCampaigns]);
 
   async function updateCampaignStatus(
     campaign: BulkCampaignListItemApi,

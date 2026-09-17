@@ -281,13 +281,19 @@ export function BulkCampaignDetailPageClient({
     };
   }, [campaignId, pathname]);
 
+  const isCampaignActive =
+    detail?.campaign?.status === "running" ||
+    detail?.campaign?.status === "pending";
+
   React.useEffect(() => {
+    if (!isCampaignActive) return;
     const id = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
       void loadDetail({ silent: true });
       void loadRecipients();
-    }, 3000);
+    }, 10_000);
     return () => window.clearInterval(id);
-  }, [loadDetail, loadRecipients]);
+  }, [isCampaignActive, loadDetail, loadRecipients]);
 
   async function updateCampaignStatus(action: "pause" | "resume") {
     setActionBusy(true);
