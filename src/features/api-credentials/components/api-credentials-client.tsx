@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {
+  Blocks,
   BookOpen,
   Check,
   Copy,
@@ -132,6 +133,15 @@ export function ApiCredentialsClient() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            nativeButton={false}
+            render={<Link href="/integrations" />}
+          >
+            <Blocks className="size-4" />
+            Integrations
+          </Button>
           <Button
             variant="outline"
             className="gap-2"

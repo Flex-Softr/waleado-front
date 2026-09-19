@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { BookOpen, Check, Copy, KeyRound } from "lucide-react";
+import { Blocks, BookOpen, Check, Copy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -89,13 +89,22 @@ export function ApiDocsClient() {
             country code.
           </p>
         </div>
-        <Link
-          href="/api-credentials"
-          className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
-        >
-          <KeyRound className="size-4" />
-          Manage credentials
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/integrations"
+            className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
+          >
+            <Blocks className="size-4" />
+            Integrations & Plugins
+          </Link>
+          <Link
+            href="/api-credentials"
+            className={cn(buttonVariants({ variant: "outline" }), "gap-2")}
+          >
+            <KeyRound className="size-4" />
+            Manage credentials
+          </Link>
+        </div>
       </div>
 
       <Card className="rounded-lg border border-border bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">

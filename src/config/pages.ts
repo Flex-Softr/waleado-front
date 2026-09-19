@@ -20,6 +20,10 @@ export const PAGE_META = {
     title: "AI Skills",
     description: "Teach AI role, services, and business knowledge for continuous chat auto-reply.",
   },
+  "/integrations": {
+    title: "Integrations & Marketplace",
+    description: "Connect Waleado with WHMCS, WordPress & WooCommerce, CRMs, and custom apps.",
+  },
   "/api-credentials": {
     title: "API Credentials",
     description: "Create and revoke Open API client ID and secret keys.",

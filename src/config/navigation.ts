@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Blocks,
   BookOpen,
   Bot,
   CreditCard,
@@ -131,6 +132,12 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Developer & API",
     items: [
+      {
+        title: "Integrations",
+        description: "WHMCS, WordPress & marketplace",
+        href: "/integrations",
+        icon: Blocks,
+      },
       {
         title: "API Credentials",
         description: "Open API client keys",
