@@ -8,6 +8,10 @@ export type BillingPlanDefinition = {
   priceUsd: number | null;
   /** e.g. "$29" or "Custom" */
   priceLabel: string;
+  /** Monthly price in BDT for display */
+  priceBdt: number | null;
+  /** e.g. "৳3,490" */
+  priceBdtLabel: string;
   periodLabel: string;
   /** Env var name holding Stripe Price ID (monthly recurring) */
   stripePriceEnv?: string;
@@ -22,6 +26,8 @@ export const BILLING_PLANS: BillingPlanDefinition[] = [
     description: "Full access to Waleado features for 3 days on your account.",
     priceUsd: 0,
     priceLabel: "$0",
+    priceBdt: 0,
+    priceBdtLabel: "৳0",
     periodLabel: "3-day trial",
     features: [
       "1 WhatsApp session",
@@ -36,6 +42,8 @@ export const BILLING_PLANS: BillingPlanDefinition[] = [
     description: "For growing teams and higher volume.",
     priceUsd: 29,
     priceLabel: "$29",
+    priceBdt: 3490,
+    priceBdtLabel: "৳3,490",
     periodLabel: "per month",
     stripePriceEnv: "STRIPE_PRICE_PRO_MONTHLY",
     highlight: true,
@@ -53,6 +61,8 @@ export const BILLING_PLANS: BillingPlanDefinition[] = [
     description: "Scale with priority support and higher limits.",
     priceUsd: 79,
     priceLabel: "$79",
+    priceBdt: 9490,
+    priceBdtLabel: "৳9,490",
     periodLabel: "per month",
     stripePriceEnv: "STRIPE_PRICE_BUSINESS_MONTHLY",
     features: [

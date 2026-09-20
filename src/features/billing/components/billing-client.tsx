@@ -61,6 +61,7 @@ export function BillingClient() {
   } = useSubscription();
   const [loading, setLoading] = React.useState<PlanId | null>(null);
   const [resetting, setResetting] = React.useState(false);
+  const [currency, setCurrency] = React.useState<"BDT" | "USD">("BDT");
   const [gateway, setGateway] = React.useState<PaymentGatewayId>("sslcommerz");
   const [customerPhone, setCustomerPhone] = React.useState("");
 
@@ -71,11 +72,25 @@ export function BillingClient() {
   const canCheckoutPaid =
     gateway === "stripe" || (gateway === "sslcommerz" && sslReady);
 
+  const handleCurrencyChange = (newCurrency: "BDT" | "USD") => {
+    setCurrency(newCurrency);
+    if (newCurrency === "BDT") {
+      setGateway("sslcommerz");
+    } else {
+      setGateway("stripe");
+    }
+  };
+
   React.useEffect(() => {
     const ssl = paymentGateways.find((g) => g.id === "sslcommerz");
     const st = paymentGateways.find((g) => g.id === "stripe");
-    if (ssl?.configured) setGateway("sslcommerz");
-    else if (st?.configured) setGateway("stripe");
+    if (ssl?.configured) {
+      setCurrency("BDT");
+      setGateway("sslcommerz");
+    } else if (st?.configured) {
+      setCurrency("USD");
+      setGateway("stripe");
+    }
   }, [paymentGateways]);
 
   React.useEffect(() => {
@@ -298,13 +313,40 @@ export function BillingClient() {
 
         <Card className="rounded-lg border-0 bg-white shadow-sm dark:bg-slate-900 xl:col-span-5">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-foreground dark:text-slate-50">
-              <CreditCard className="size-5 text-foreground" />
-              Payment gateway
-            </CardTitle>
-            <CardDescription>
-              Pick a provider before upgrading. SSLCommerz needs a contact
-              phone; Stripe can run demo upgrades when keys are absent.
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200/80 pb-3 dark:border-slate-800">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-foreground dark:text-slate-50">
+                <CreditCard className="size-5 text-foreground" />
+                Payment & Currency
+              </CardTitle>
+              <div className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-950">
+                <button
+                  type="button"
+                  onClick={() => handleCurrencyChange("BDT")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition-all",
+                    currency === "BDT"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  )}
+                >
+                  <span>🇧🇩 ৳ BDT</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCurrencyChange("USD")}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold transition-all",
+                    currency === "USD"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  )}
+                >
+                  <span>🌐 $ USD</span>
+                </button>
+              </div>
+            </div>
+            <CardDescription className="pt-2">
+              Select your currency above. BDT uses SSLCommerz (bKash, Nagad, Rocket, Cards); USD uses Stripe.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -313,7 +355,11 @@ export function BillingClient() {
               <button
                 key={g.id}
                 type="button"
-                onClick={() => setGateway(g.id)}
+                onClick={() => {
+                  setGateway(g.id);
+                  if (g.id === "sslcommerz") setCurrency("BDT");
+                  if (g.id === "stripe") setCurrency("USD");
+                }}
                 className={cn(
                   "rounded-lg border border-slate-200/80 p-4 text-left transition-all dark:border-slate-800",
                   gateway === g.id
@@ -323,9 +369,23 @@ export function BillingClient() {
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-bold text-foreground dark:text-slate-50">
-                    {g.displayName}
-                  </span>
+                  <div className="space-y-1">
+                    <span className="font-bold text-foreground dark:text-slate-50">
+                      {g.displayName}
+                    </span>
+                    {g.id === "sslcommerz" ? (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <Badge variant="outline" className="border-pink-300 bg-pink-50 text-[10px] font-bold text-pink-700 dark:border-pink-900 dark:bg-pink-950/50 dark:text-pink-300">bKash</Badge>
+                        <Badge variant="outline" className="border-orange-300 bg-orange-50 text-[10px] font-bold text-orange-700 dark:border-orange-900 dark:bg-orange-950/50 dark:text-orange-300">Nagad</Badge>
+                        <Badge variant="outline" className="border-purple-300 bg-purple-50 text-[10px] font-bold text-purple-700 dark:border-purple-900 dark:bg-purple-950/50 dark:text-purple-300">Rocket</Badge>
+                        <Badge variant="outline" className="border-blue-300 bg-blue-50 text-[10px] font-bold text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300">Cards</Badge>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        <Badge variant="outline" className="border-slate-300 bg-slate-50 text-[10px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">Visa / Mastercard / AMEX</Badge>
+                      </div>
+                    )}
+                  </div>
                   {g.configured ? (
                     <Badge className="rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700 shadow-none dark:bg-emerald-950 dark:text-emerald-300">
                       Ready
@@ -462,7 +522,7 @@ export function BillingClient() {
                 <CardDescription className="min-h-10">{plan.description}</CardDescription>
                 <div className="pt-3">
                   <span className="text-4xl font-extrabold tracking-tight text-black dark:text-white">
-                    {plan.priceLabel}
+                    {currency === "BDT" ? plan.priceBdtLabel : plan.priceLabel}
                   </span>
                   {plan.priceUsd != null && plan.priceUsd > 0 ? (
                     <span className="text-sm text-slate-500 dark:text-slate-400">
