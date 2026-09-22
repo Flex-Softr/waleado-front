@@ -484,7 +484,7 @@ function AiSkillFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto sm:rounded-2xl">
+      <DialogContent className="max-h-[90vh] w-full max-w-6xl overflow-y-auto sm:rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="size-5 text-emerald-500" />
