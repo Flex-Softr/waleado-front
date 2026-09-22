@@ -484,229 +484,234 @@ function AiSkillFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] w-full max-w-6xl sm:max-w-5xl lg:max-w-6xl overflow-y-auto sm:rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
+      <DialogContent className="max-h-[92vh] w-[95vw] sm:max-w-[95vw] lg:max-w-[1300px] xl:max-w-[1380px] overflow-y-auto sm:rounded-2xl p-6 sm:p-8">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
             <Sparkles className="size-5 text-emerald-500" />
             {isEdit ? "Edit AI Skill" : "Teach New AI Skill"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             Provide your business knowledge, services, and AI role. This
             teaches the AI how to represent your business in WhatsApp chats.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="skill-name" className="text-xs font-semibold">
-                Skill Name *
-              </Label>
-              <Input
-                id="skill-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Customer Support & Booking Specialist"
-                className="rounded-xl"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="skill-desc" className="text-xs font-semibold">
-                Short Description (Optional)
-              </Label>
-              <Input
-                id="skill-desc"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Handles general inquiries and explains available service packages"
-                className="rounded-xl"
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="skill-role" className="text-xs font-semibold">
-                1. AI Role & Persona *
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Define who the AI is, what tone to adopt, and its primary purpose.
-              </p>
-              <Textarea
-                id="skill-role"
-                value={rolePrompt}
-                onChange={(e) => setRolePrompt(e.target.value)}
-                rows={4}
-                placeholder="e.g. You are Alex, the friendly customer support specialist for Acme Digital..."
-                className="rounded-xl text-sm"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="skill-services" className="text-xs font-semibold">
-                2. Services & Products Provided *
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Describe what services, packages, or goods your business sells or
-                delivers.
-              </p>
-              <Textarea
-                id="skill-services"
-                value={servicesDescription}
-                onChange={(e) => setServicesDescription(e.target.value)}
-                rows={4}
-                placeholder="e.g. We provide 1) Web Development, 2) Mobile Apps, 3) WhatsApp Marketing..."
-                className="rounded-xl text-sm"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="skill-knowledge" className="text-xs font-semibold">
-                3. Business Knowledge & FAQs *
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Crucial business facts: hours, pricing, office address, return
-                policies, booking links, and FAQs.
-              </p>
-              <Textarea
-                id="skill-knowledge"
-                value={businessKnowledge}
-                onChange={(e) => setBusinessKnowledge(e.target.value)}
-                rows={4}
-                placeholder="e.g. Hours: Mon-Fri 9am-6pm. Office: 123 Tech Park. Pricing: Standard $50, Pro $150..."
-                className="rounded-xl text-sm"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="skill-instructions" className="text-xs font-semibold">
-                4. Additional Guidelines & Rules (Optional)
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Guardrails, dos & don'ts, or special tone rules.
-              </p>
-              <Textarea
-                id="skill-instructions"
-                value={customInstructions}
-                onChange={(e) => setCustomInstructions(e.target.value)}
-                rows={4}
-                placeholder="e.g. Never promise discounts over 10%. Always ask for the customer's preferred date..."
-                className="rounded-xl text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-              AI Settings & Continuous Chat
-            </h4>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">AI Credential</Label>
-                <Select
-                  value={aiCredentialId || CREDENTIAL_NONE}
-                  onValueChange={(val) =>
-                    setAiCredentialId(!val || val === CREDENTIAL_NONE ? "" : val)
-                  }
-                >
-                  <SelectTrigger className="rounded-xl bg-white dark:bg-slate-950">
-                    <SelectValue placeholder="Workspace default credential" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={CREDENTIAL_NONE}>
-                      Workspace default credential
-                    </SelectItem>
-                    {activeCredentials.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} ({c.provider === "gemini" ? "Gemini" : "OpenRouter"})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">
-                  Model Override (Optional)
-                </Label>
-                <Input
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  placeholder="e.g. gemini-2.5-flash"
-                  className="rounded-xl bg-white dark:bg-slate-950"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Temperature (0–2)</Label>
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="2"
-                  value={temperature}
-                  onChange={(e) => setTemperature(e.target.value)}
-                  className="rounded-xl bg-white dark:bg-slate-950"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Max Tokens</Label>
-                <Input
-                  type="number"
-                  step="1"
-                  min="50"
-                  max="4096"
-                  value={maxTokens}
-                  onChange={(e) => setMaxTokens(e.target.value)}
-                  className="rounded-xl bg-white dark:bg-slate-950"
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 rounded-lg border border-slate-200/60 bg-white p-3 dark:border-slate-800 dark:bg-slate-950/60 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                  Continuous Multi-Turn Chat
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  The AI remembers previous messages exchanged with each
-                  customer and maintains context across replies.
-                </p>
-              </div>
-              <label className="inline-flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={continuousChat}
-                  onChange={(e) => setContinuousChat(e.target.checked)}
-                  className="sr-only"
-                />
-                <span
-                  className={
-                    continuousChat
-                      ? "relative h-6 w-11 shrink-0 rounded-full border border-emerald-500 bg-emerald-500 transition-colors"
-                      : "relative h-6 w-11 shrink-0 rounded-full border border-slate-200 bg-slate-200 transition-colors dark:border-slate-600 dark:bg-slate-700"
-                  }
-                >
-                  <span
-                    className={
-                      continuousChat
-                        ? "absolute left-0.5 top-0.5 size-5 translate-x-5 rounded-full bg-white shadow transition-transform"
-                        : "absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform"
-                    }
+        <form onSubmit={handleSubmit} className="space-y-6 pt-2">
+          {/* Main 2-Column Wide Grid */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left Column: Identity & Persona */}
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="skill-name" className="text-xs font-semibold">
+                    Skill Name *
+                  </Label>
+                  <Input
+                    id="skill-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Customer Support & Booking Specialist"
+                    className="rounded-xl"
+                    required
                   />
-                </span>
-              </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="skill-desc" className="text-xs font-semibold">
+                    Short Description (Optional)
+                  </Label>
+                  <Input
+                    id="skill-desc"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. Handles inquiries and explains packages"
+                    className="rounded-xl"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="skill-role" className="text-xs font-semibold">
+                  1. AI Role & Persona *
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Define who the AI is, what tone to adopt, and its primary purpose.
+                </p>
+                <Textarea
+                  id="skill-role"
+                  value={rolePrompt}
+                  onChange={(e) => setRolePrompt(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. You are Alex, the friendly customer support specialist for Acme Digital..."
+                  className="rounded-xl text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="skill-services" className="text-xs font-semibold">
+                  2. Services & Products Provided *
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Describe what services, packages, or goods your business sells or
+                  delivers.
+                </p>
+                <Textarea
+                  id="skill-services"
+                  value={servicesDescription}
+                  onChange={(e) => setServicesDescription(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. We provide 1) Web Development, 2) Mobile Apps, 3) WhatsApp Marketing..."
+                  className="rounded-xl text-sm"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Knowledge Base & AI Configuration */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="skill-knowledge" className="text-xs font-semibold">
+                  3. Business Knowledge & FAQs *
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Crucial business facts: hours, pricing, office address, return
+                  policies, booking links, and FAQs.
+                </p>
+                <Textarea
+                  id="skill-knowledge"
+                  value={businessKnowledge}
+                  onChange={(e) => setBusinessKnowledge(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. Hours: Mon-Fri 9am-6pm. Office: 123 Tech Park. Pricing: Standard $50, Pro $150..."
+                  className="rounded-xl text-sm"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="skill-instructions" className="text-xs font-semibold">
+                  4. Additional Guidelines & Rules (Optional)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Guardrails, dos & don'ts, or special tone rules.
+                </p>
+                <Textarea
+                  id="skill-instructions"
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Never promise discounts over 10%. Always ask for the customer's preferred date..."
+                  className="rounded-xl text-sm"
+                />
+              </div>
+
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/30">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  AI Settings & Continuous Chat
+                </h4>
+                <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">AI Credential</Label>
+                    <Select
+                      value={aiCredentialId || CREDENTIAL_NONE}
+                      onValueChange={(val) =>
+                        setAiCredentialId(!val || val === CREDENTIAL_NONE ? "" : val)
+                      }
+                    >
+                      <SelectTrigger className="rounded-xl bg-white dark:bg-slate-950">
+                        <SelectValue placeholder="Workspace default credential" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={CREDENTIAL_NONE}>
+                          Workspace default credential
+                        </SelectItem>
+                        {activeCredentials.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} ({c.provider === "gemini" ? "Gemini" : "OpenRouter"})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">
+                      Model Override (Optional)
+                    </Label>
+                    <Input
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      placeholder="e.g. gemini-3.6-flash"
+                      className="rounded-xl bg-white dark:bg-slate-950"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Temperature (0–2)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      value={temperature}
+                      onChange={(e) => setTemperature(e.target.value)}
+                      className="rounded-xl bg-white dark:bg-slate-950"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Max Tokens</Label>
+                    <Input
+                      type="number"
+                      step="1"
+                      min="50"
+                      max="4096"
+                      value={maxTokens}
+                      onChange={(e) => setMaxTokens(e.target.value)}
+                      className="rounded-xl bg-white dark:bg-slate-950"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2 rounded-lg border border-slate-200/60 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950/60 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                      Continuous Multi-Turn Chat
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Remembers previous messages exchanged with each customer.
+                    </p>
+                  </div>
+                  <label className="inline-flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={continuousChat}
+                      onChange={(e) => setContinuousChat(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={
+                        continuousChat
+                          ? "relative h-6 w-11 shrink-0 rounded-full border border-emerald-500 bg-emerald-500 transition-colors"
+                          : "relative h-6 w-11 shrink-0 rounded-full border border-slate-200 bg-slate-200 transition-colors dark:border-slate-600 dark:bg-slate-700"
+                      }
+                    >
+                      <span
+                        className={
+                          continuousChat
+                            ? "absolute left-0.5 top-0.5 size-5 translate-x-5 rounded-full bg-white shadow transition-transform"
+                            : "absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform"
+                        }
+                      />
+                    </span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* Footer actions */}
           <div className="flex items-center justify-between border-t border-slate-200/80 pt-4 dark:border-slate-800">
             <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium">
               <input
