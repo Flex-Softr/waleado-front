@@ -175,7 +175,7 @@ export function CreateCallResponderRuleDialog({
       <DialogContent
         showCloseButton
         className={cn(
-          "max-h-[min(94vh,840px)] max-w-[calc(100%-1.5rem)] gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-xl",
+          "max-h-[min(94vh,840px)] w-[95vw] sm:max-w-[95vw] lg:max-w-[1150px] xl:max-w-[1250px] gap-0 overflow-hidden rounded-2xl p-0",
           "border border-border bg-card shadow-2xl backdrop-blur-md"
         )}
       >
@@ -185,195 +185,203 @@ export function CreateCallResponderRuleDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[min(65vh,580px)] space-y-5 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-1">
-              <Label htmlFor="cr-name" className="text-xs font-bold text-foreground">
-                Rule Name{" "}
-                <span className="font-normal text-destructive">*</span>
-              </Label>
-              <Input
-                id="cr-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Missed Call Response"
-                className="h-11 rounded-xl"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-1">
-              <Label htmlFor="cr-session" className="text-xs font-bold text-foreground">
-                WhatsApp Device / Session{" "}
-                <span className="font-normal text-destructive">*</span>
-              </Label>
-              <Select
-                value={deviceId ?? undefined}
-                onValueChange={(v) => setDeviceId(v ?? null)}
-                items={devices.map((d) => ({
-                  value: d.id,
-                  label: d.phone ? `${d.name} · ${d.phone}` : d.name,
-                }))}
-              >
-                <SelectTrigger id="cr-session" className="h-11 w-full rounded-xl">
-                  <SelectValue placeholder="Select a session" />
-                </SelectTrigger>
-                <SelectContent>
-                  {devices.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.phone ? `${d.name} · ${d.phone}` : d.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-xs font-bold text-foreground">
-              Call Types to Trigger Automated Response{" "}
-              <span className="font-normal text-destructive">*</span>
-            </Label>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {CALL_TYPE_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={cn(
-                    "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all",
-                    callTypes.has(opt.value)
-                      ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20 dark:bg-primary/10"
-                      : "border-border bg-muted/40 hover:bg-muted/70"
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    checked={callTypes.has(opt.value)}
-                    onChange={(e) => toggleCallType(opt.value, e.target.checked)}
-                    className="mt-0.5 size-4 rounded border-slate-300 text-primary focus:ring-primary/30"
+        <div className="max-h-[min(75vh,640px)] overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left Column: Triggers & Session */}
+            <div className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-1">
+                  <Label htmlFor="cr-name" className="text-xs font-bold text-foreground">
+                    Rule Name{" "}
+                    <span className="font-normal text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="cr-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., Missed Call Response"
+                    className="h-11 rounded-xl"
                   />
-                  <div className="min-w-0">
-                    <span className="text-sm font-semibold text-foreground">
-                      {opt.label}
-                    </span>
-                    <p className="text-xs text-muted-foreground leading-tight mt-0.5">
-                      {opt.description}
-                    </p>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
+                </div>
+                <div className="space-y-2 sm:col-span-1">
+                  <Label htmlFor="cr-session" className="text-xs font-bold text-foreground">
+                    WhatsApp Device / Session{" "}
+                    <span className="font-normal text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={deviceId ?? undefined}
+                    onValueChange={(v) => setDeviceId(v ?? null)}
+                    items={devices.map((d) => ({
+                      value: d.id,
+                      label: d.phone ? `${d.name} · ${d.phone}` : d.name,
+                    }))}
+                  >
+                    <SelectTrigger id="cr-session" className="h-11 w-full rounded-xl">
+                      <SelectValue placeholder="Select a session" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {devices.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.phone ? `${d.name} · ${d.phone}` : d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cr-delay" className="text-xs font-bold text-foreground">
-              Response Delay
-            </Label>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Input
-                id="cr-delay"
-                type="number"
-                min={0}
-                max={1440}
-                value={delayMinutes}
-                onChange={(e) => setDelayMinutes(e.target.value)}
-                className="h-11 w-24 rounded-xl tabular-nums text-center font-bold"
-              />
-              <span className="text-xs text-muted-foreground font-medium">
-                {delayMinutes === "0" || delayMinutes === ""
-                  ? "minute(s) (Instant — sends immediately when call ends)"
-                  : "minute(s) after call ends before sending message"}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-foreground">
-              Message Format{" "}
-              <span className="font-normal text-destructive">*</span>
-            </Label>
-            <NodeMessageTypeCards
-              value={messageFormType}
-              onChange={setMessageFormType}
-            />
-          </div>
-
-          {messageFormType === "text" ? (
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="cr-body" className="text-xs font-bold text-foreground">
-                  Custom Response Message{" "}
+              <div className="space-y-3">
+                <Label className="text-xs font-bold text-foreground">
+                  Call Types to Trigger Automated Response{" "}
                   <span className="font-normal text-destructive">*</span>
                 </Label>
-                <span className="text-[11px] text-muted-foreground font-medium">
-                  Supports dynamic tags & spintax
-                </span>
-              </div>
-              <Textarea
-                id="cr-body"
-                value={messageBody}
-                onChange={(e) => setMessageBody(e.target.value)}
-                placeholder="Enter custom message to send automatically when a missed call occurs..."
-                className="min-h-32 resize-y rounded-xl text-sm leading-relaxed p-3.5"
-              />
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] font-semibold text-muted-foreground mr-1 flex items-center gap-1">
-                  <Sparkles className="size-3 text-primary" /> Insert tag:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => insertTag("{{phone}}")}
-                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
-                >
-                  {"{{phone}}"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertTag("{{name}}")}
-                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
-                >
-                  {"{{name}}"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertTag("{{time}}")}
-                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
-                >
-                  {"{{time}}"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => insertTag("{Hello|Hi|Hey}")}
-                  className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
-                >
-                  {"{Hello|Hi|Hey}"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="cr-template" className="text-xs font-bold text-foreground">
-                Message Template{" "}
-                <span className="font-normal text-destructive">*</span>
-              </Label>
-              <Select
-                value={templateId ?? undefined}
-                onValueChange={(v) => setTemplateId(v ?? null)}
-                items={templates.map((t) => ({
-                  value: t.id,
-                  label: t.name,
-                }))}
-              >
-                <SelectTrigger id="cr-template" className="h-11 w-full rounded-xl">
-                  <SelectValue placeholder="Select a template…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {CALL_TYPE_OPTIONS.map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all",
+                        callTypes.has(opt.value)
+                          ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20 dark:bg-primary/10"
+                          : "border-border bg-muted/40 hover:bg-muted/70"
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={callTypes.has(opt.value)}
+                        onChange={(e) => toggleCallType(opt.value, e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-slate-300 text-primary focus:ring-primary/30"
+                      />
+                      <div className="min-w-0">
+                        <span className="text-sm font-semibold text-foreground">
+                          {opt.label}
+                        </span>
+                        <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                          {opt.description}
+                        </p>
+                      </div>
+                    </label>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cr-delay" className="text-xs font-bold text-foreground">
+                  Response Delay
+                </Label>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Input
+                    id="cr-delay"
+                    type="number"
+                    min={0}
+                    max={1440}
+                    value={delayMinutes}
+                    onChange={(e) => setDelayMinutes(e.target.value)}
+                    className="h-11 w-24 rounded-xl tabular-nums text-center font-bold"
+                  />
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {delayMinutes === "0" || delayMinutes === ""
+                      ? "minute(s) (Instant — sends immediately when call ends)"
+                      : "minute(s) after call ends before sending message"}
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Right Column: Response Message Configuration */}
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-foreground">
+                  Message Format{" "}
+                  <span className="font-normal text-destructive">*</span>
+                </Label>
+                <NodeMessageTypeCards
+                  value={messageFormType}
+                  onChange={setMessageFormType}
+                />
+              </div>
+
+              {messageFormType === "text" ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="cr-body" className="text-xs font-bold text-foreground">
+                      Custom Response Message{" "}
+                      <span className="font-normal text-destructive">*</span>
+                    </Label>
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      Supports dynamic tags & spintax
+                    </span>
+                  </div>
+                  <Textarea
+                    id="cr-body"
+                    value={messageBody}
+                    onChange={(e) => setMessageBody(e.target.value)}
+                    placeholder="Enter custom message to send automatically when a missed call occurs..."
+                    className="min-h-36 resize-y rounded-xl text-sm leading-relaxed p-3.5"
+                  />
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[11px] font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+                      <Sparkles className="size-3 text-primary" /> Insert tag:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => insertTag("{{phone}}")}
+                      className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                    >
+                      {"{{phone}}"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTag("{{name}}")}
+                      className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                    >
+                      {"{{name}}"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTag("{{time}}")}
+                      className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                    >
+                      {"{{time}}"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertTag("{Hello|Hi|Hey}")}
+                      className="rounded-md border border-border bg-muted/60 px-2 py-0.5 font-mono text-[11px] font-semibold text-foreground hover:bg-muted"
+                    >
+                      {"{Hello|Hi|Hey}"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="cr-template" className="text-xs font-bold text-foreground">
+                    Message Template{" "}
+                    <span className="font-normal text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={templateId ?? undefined}
+                    onValueChange={(v) => setTemplateId(v ?? null)}
+                    items={templates.map((t) => ({
+                      value: t.id,
+                      label: t.name,
+                    }))}
+                  >
+                    <SelectTrigger id="cr-template" className="h-11 w-full rounded-xl">
+                      <SelectValue placeholder="Select a template…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col-reverse gap-3 border-t border-border/80 bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-8">
