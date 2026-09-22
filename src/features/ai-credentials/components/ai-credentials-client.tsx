@@ -435,31 +435,37 @@ function CredentialFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Edit credential" : "Add AI credential"}
+      <DialogContent className="max-h-[92vh] w-[95vw] sm:max-w-[95vw] lg:max-w-[880px] xl:max-w-[940px] overflow-y-auto sm:rounded-2xl p-6 sm:p-7">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-xl font-semibold">
+            {isEdit ? "Edit AI Credential" : "Add AI Credential"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {isEdit
               ? "Update name, model, endpoint, or rotate the API key."
               : "Save provider API key, default model, and optional custom endpoint."}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 pt-2">
+
+        <div className="grid gap-4 sm:grid-cols-2 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="ai-cred-name">Name</Label>
+            <Label htmlFor="ai-cred-name">
+              Name <span className="text-red-600 dark:text-red-400">*</span>
+            </Label>
             <Input
               id="ai-cred-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Team Gemini"
-              className="rounded-xl"
+              className="h-11 rounded-xl"
             />
           </div>
+
           {!isEdit ? (
             <div className="space-y-2">
-              <Label>Provider</Label>
+              <Label>
+                Provider <span className="text-red-600 dark:text-red-400">*</span>
+              </Label>
               <Select
                 value={provider}
                 onValueChange={(v) => {
@@ -490,10 +496,11 @@ function CredentialFormDialog({
               <Input
                 value={providerLabel(editing.provider)}
                 disabled
-                className="rounded-xl"
+                className="h-11 rounded-xl"
               />
             </div>
           )}
+
           <div className="space-y-2">
             <Label>
               Model <span className="text-red-600 dark:text-red-400">*</span>
@@ -542,23 +549,11 @@ function CredentialFormDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="ai-cred-endpoint">API endpoint (optional)</Label>
-            <Input
-              id="ai-cred-endpoint"
-              value={apiEndpoint}
-              onChange={(e) => setApiEndpoint(e.target.value)}
-              placeholder={defaultEndpoint || "https://…"}
-              className="rounded-xl text-sm"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Leave empty to use the provider default (
-              {defaultEndpoint || "provider default"}).
-            </p>
-          </div>
+
           <div className="space-y-2">
             <Label htmlFor="ai-cred-key">
-              API key{isEdit ? " (optional)" : ""}
+              API key{isEdit ? " (optional)" : " *"}{" "}
+              {!isEdit && <span className="text-red-600 dark:text-red-400">*</span>}
             </Label>
             <Input
               id="ai-cred-key"
@@ -567,44 +562,65 @@ function CredentialFormDialog({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder={isEdit ? "Leave blank to keep current" : "Paste API key"}
-              className="rounded-xl font-mono text-sm"
+              className="h-11 rounded-xl font-mono text-sm"
             />
           </div>
-          {isEdit ? (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={active}
-                onChange={(e) => setActive(e.target.checked)}
-              />
-              Active
-            </label>
-          ) : null}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={!canSubmit}
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Saving…
-                </>
-              ) : isEdit ? (
-                "Save"
-              ) : (
-                "Add"
-              )}
-            </Button>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="ai-cred-endpoint">API endpoint (optional)</Label>
+            <Input
+              id="ai-cred-endpoint"
+              value={apiEndpoint}
+              onChange={(e) => setApiEndpoint(e.target.value)}
+              placeholder={defaultEndpoint || "https://…"}
+              className="h-11 rounded-xl text-sm"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Leave empty to use the provider default (
+              {defaultEndpoint || "provider default"}).
+            </p>
+          </div>
+
+          <div className="sm:col-span-2 flex items-center justify-between border-t border-border/80 pt-4">
+            {isEdit ? (
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={(e) => setActive(e.target.checked)}
+                  className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                Active Credential
+              </label>
+            ) : <div />}
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleSubmit()}
+                disabled={!canSubmit}
+                className="gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Saving…
+                  </>
+                ) : isEdit ? (
+                  "Save Changes"
+                ) : (
+                  "Add Credential"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>
