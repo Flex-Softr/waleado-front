@@ -484,7 +484,7 @@ function AiSkillFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto sm:rounded-2xl">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto sm:rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="size-5 text-emerald-500" />
@@ -498,7 +498,7 @@ function AiSkillFormDialog({
 
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="space-y-1.5">
               <Label htmlFor="skill-name" className="text-xs font-semibold">
                 Skill Name *
               </Label>
@@ -512,7 +512,7 @@ function AiSkillFormDialog({
               />
             </div>
 
-            <div className="space-y-1.5 sm:col-span-2">
+            <div className="space-y-1.5">
               <Label htmlFor="skill-desc" className="text-xs font-semibold">
                 Short Description (Optional)
               </Label>
@@ -526,77 +526,81 @@ function AiSkillFormDialog({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-role" className="text-xs font-semibold">
-              1. AI Role & Persona *
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Define who the AI is, what tone to adopt, and its primary purpose.
-            </p>
-            <Textarea
-              id="skill-role"
-              value={rolePrompt}
-              onChange={(e) => setRolePrompt(e.target.value)}
-              rows={3}
-              placeholder="e.g. You are Alex, the friendly customer support specialist for Acme Digital..."
-              className="rounded-xl text-sm"
-              required
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="skill-role" className="text-xs font-semibold">
+                1. AI Role & Persona *
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Define who the AI is, what tone to adopt, and its primary purpose.
+              </p>
+              <Textarea
+                id="skill-role"
+                value={rolePrompt}
+                onChange={(e) => setRolePrompt(e.target.value)}
+                rows={4}
+                placeholder="e.g. You are Alex, the friendly customer support specialist for Acme Digital..."
+                className="rounded-xl text-sm"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="skill-services" className="text-xs font-semibold">
+                2. Services & Products Provided *
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Describe what services, packages, or goods your business sells or
+                delivers.
+              </p>
+              <Textarea
+                id="skill-services"
+                value={servicesDescription}
+                onChange={(e) => setServicesDescription(e.target.value)}
+                rows={4}
+                placeholder="e.g. We provide 1) Web Development, 2) Mobile Apps, 3) WhatsApp Marketing..."
+                className="rounded-xl text-sm"
+                required
+              />
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-services" className="text-xs font-semibold">
-              2. Services & Products Provided *
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Describe what services, packages, or goods your business sells or
-              delivers.
-            </p>
-            <Textarea
-              id="skill-services"
-              value={servicesDescription}
-              onChange={(e) => setServicesDescription(e.target.value)}
-              rows={3}
-              placeholder="e.g. We provide 1) Web Development, 2) Mobile Apps, 3) WhatsApp Marketing..."
-              className="rounded-xl text-sm"
-              required
-            />
-          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="skill-knowledge" className="text-xs font-semibold">
+                3. Business Knowledge & FAQs *
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Crucial business facts: hours, pricing, office address, return
+                policies, booking links, and FAQs.
+              </p>
+              <Textarea
+                id="skill-knowledge"
+                value={businessKnowledge}
+                onChange={(e) => setBusinessKnowledge(e.target.value)}
+                rows={4}
+                placeholder="e.g. Hours: Mon-Fri 9am-6pm. Office: 123 Tech Park. Pricing: Standard $50, Pro $150..."
+                className="rounded-xl text-sm"
+                required
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-knowledge" className="text-xs font-semibold">
-              3. Business Knowledge & FAQs *
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Crucial business facts: hours, pricing, office address, return
-              policies, booking links, and frequently asked questions.
-            </p>
-            <Textarea
-              id="skill-knowledge"
-              value={businessKnowledge}
-              onChange={(e) => setBusinessKnowledge(e.target.value)}
-              rows={4}
-              placeholder="e.g. Hours: Mon-Fri 9am-6pm. Office: 123 Tech Park. Pricing: Standard $50, Pro $150..."
-              className="rounded-xl text-sm"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="skill-instructions" className="text-xs font-semibold">
-              4. Additional Guidelines & Rules (Optional)
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Guardrails, dos & don'ts, or special tone rules.
-            </p>
-            <Textarea
-              id="skill-instructions"
-              value={customInstructions}
-              onChange={(e) => setCustomInstructions(e.target.value)}
-              rows={2}
-              placeholder="e.g. Never promise discounts over 10%. Always ask for the customer's preferred date..."
-              className="rounded-xl text-sm"
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="skill-instructions" className="text-xs font-semibold">
+                4. Additional Guidelines & Rules (Optional)
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Guardrails, dos & don'ts, or special tone rules.
+              </p>
+              <Textarea
+                id="skill-instructions"
+                value={customInstructions}
+                onChange={(e) => setCustomInstructions(e.target.value)}
+                rows={4}
+                placeholder="e.g. Never promise discounts over 10%. Always ask for the customer's preferred date..."
+                className="rounded-xl text-sm"
+              />
+            </div>
           </div>
 
           <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/30">
