@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { licenseFromPlan } from "@/features/billing/lib/license-from-plan";
@@ -63,7 +62,6 @@ export function SubscriptionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const { user, isBootstrapping: authBootstrapping, workspace } = useAuth();
   const [planId, setPlanId] = React.useState<PlanId>("free");
   const [hydrated, setHydrated] = React.useState(false);
@@ -201,7 +199,7 @@ export function SubscriptionProvider({
     return () => {
       cancelled = true;
     };
-  }, [authBootstrapping, user, workspace?.id, applyBillingPayload, pathname]);
+  }, [authBootstrapping, user, workspace?.id, applyBillingPayload]);
 
   const setPlan = React.useCallback((plan: PlanId) => {
     setPlanId(plan);
