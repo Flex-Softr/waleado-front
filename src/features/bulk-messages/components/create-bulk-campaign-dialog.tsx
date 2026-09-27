@@ -1920,7 +1920,7 @@ export function CreateBulkCampaignDialog({
                                 Anti-block protection
                               </Label>
                               <p className={helperClass}>
-                                Control pacing, filtering, and send windows.
+                                Master safeguard: enforces pacing intervals, audience filtering, duplicate prevention, and active hours to protect your WhatsApp account from being blocked.
                               </p>
                             </div>
                             <label className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-white px-3 text-xs font-semibold text-foreground shadow-sm dark:border-border dark:bg-slate-950 dark:text-foreground">
@@ -1960,31 +1960,60 @@ export function CreateBulkCampaignDialog({
                               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                 Filter options
                               </p>
-                              <div className="grid gap-2 sm:grid-cols-2">
+                              <div className="grid gap-3 sm:grid-cols-2">
                                 {(
                                   [
-                                    ["spintax", "Spintax", spintaxEnabled, setSpintaxEnabled],
-                                    ["verify", "Verify Numbers", verifyNumbers, setVerifyNumbers],
-                                    ["replied", "Replied Only", repliedOnly, setRepliedOnly],
-                                    ["window24", "24h Window", recent24hOnly, setRecent24hOnly],
+                                    [
+                                      "spintax",
+                                      "Spintax",
+                                      spintaxEnabled,
+                                      setSpintaxEnabled,
+                                      "Randomizes message phrasing using {Hello|Hi|Hey} so each recipient gets a unique variation, avoiding duplicate-text spam filters.",
+                                    ],
+                                    [
+                                      "verify",
+                                      "Verify Numbers",
+                                      verifyNumbers,
+                                      setVerifyNumbers,
+                                      "Filters out inactive or invalid numbers to avoid delivery failures that quickly trigger account bans.",
+                                    ],
+                                    [
+                                      "replied",
+                                      "Replied Only",
+                                      repliedOnly,
+                                      setRepliedOnly,
+                                      "Only sends to contacts who previously messaged or replied to you, maintaining high WhatsApp conversation trust.",
+                                    ],
+                                    [
+                                      "window24",
+                                      "24h Window",
+                                      recent24hOnly,
+                                      setRecent24hOnly,
+                                      "Restricts delivery to contacts who interacted in the last 24h, adhering to WhatsApp's customer service window.",
+                                    ],
                                   ] as const
-                                ).map(([key, title, value, setter]) => (
+                                ).map(([key, title, value, setter, purpose]) => (
                                   <label
                                     key={key}
                                     className={cn(
-                                      "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
+                                      "flex cursor-pointer flex-col gap-1.5 rounded-lg border p-3 text-sm transition-colors",
                                       value
-                                        ? "border-border bg-muted text-foreground dark:border-border dark:bg-muted/30 dark:text-foreground"
+                                        ? "border-border bg-muted/60 text-foreground dark:border-border dark:bg-muted/30 dark:text-foreground"
                                         : "border-slate-200 bg-white hover:border-border hover:bg-muted/50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-border"
                                     )}
                                   >
-                                    <input
-                                      type="checkbox"
-                                      checked={value}
-                                      onChange={(e) => setter(e.target.checked)}
-                                      className="size-4 rounded border-slate-300 text-foreground focus:ring-ring/20"
-                                    />
-                                    {title}
+                                    <div className="flex items-center gap-2 font-medium">
+                                      <input
+                                        type="checkbox"
+                                        checked={value}
+                                        onChange={(e) => setter(e.target.checked)}
+                                        className="size-4 rounded border-slate-300 text-foreground focus:ring-ring/20"
+                                      />
+                                      <span>{title}</span>
+                                    </div>
+                                    <p className="text-xs leading-relaxed text-muted-foreground pl-6">
+                                      {purpose}
+                                    </p>
                                   </label>
                                 ))}
                               </div>
@@ -2017,6 +2046,9 @@ export function CreateBulkCampaignDialog({
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
+                                <p className={helperClass}>
+                                  Prevents duplicate sends to the same contact across the campaign or workspace within 24 hours to reduce user spam reports.
+                                </p>
                               </div>
                             </div>
                           ) : null}
@@ -2047,7 +2079,7 @@ export function CreateBulkCampaignDialog({
                               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                 Batch controls
                               </p>
-                              <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-1.5">
                                   <Label className="text-xs text-slate-500">
                                     Batch pause
@@ -2070,6 +2102,9 @@ export function CreateBulkCampaignDialog({
                                     />
                                     <span>sec</span>
                                   </div>
+                                  <p className={helperClass}>
+                                    Pauses sending for a cooldown period after sending each batch of messages. Breaks continuous high-speed sending so WhatsApp sees normal human activity patterns.
+                                  </p>
                                 </div>
                                 <div className="space-y-1.5">
                                   <Label className="text-xs text-slate-500">
@@ -2082,6 +2117,9 @@ export function CreateBulkCampaignDialog({
                                     onChange={(e) => setFailLimitInRow(e.target.value)}
                                     className={`${fieldClass} h-10 w-20`}
                                   />
+                                  <p className={helperClass}>
+                                    Emergency stop: automatically pauses the campaign if this many consecutive messages fail. Protects your account from repeatedly firing on dead numbers or broken connections.
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -2113,7 +2151,7 @@ export function CreateBulkCampaignDialog({
                               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                 Send windows
                               </p>
-                              <div className="grid gap-3 sm:grid-cols-2">
+                              <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-1.5">
                                   <Label className="text-xs text-slate-500">Active hours</Label>
                                   <div className="flex items-center gap-2">
@@ -2131,6 +2169,9 @@ export function CreateBulkCampaignDialog({
                                       className={`${fieldClass} h-10`}
                                     />
                                   </div>
+                                  <p className={helperClass}>
+                                    Restricts message dispatch to acceptable daytime hours (e.g. 09:00 to 20:00). Pauses sending overnight to avoid disturbing contacts and getting spam-reported.
+                                  </p>
                                 </div>
                                 <div className="space-y-1.5">
                                   <Label className="text-xs text-slate-500">Inactive hours</Label>
@@ -2151,6 +2192,9 @@ export function CreateBulkCampaignDialog({
                                       disabled={!activeHoursEnabled}
                                     />
                                   </div>
+                                  <p className={helperClass}>
+                                    Optional daily blackout window (e.g. 13:00 to 14:00 lunch break). Sending temporarily halts during this window to break robotic regularity.
+                                  </p>
                                 </div>
                               </div>
                               {!activeHoursPairOk ? (
