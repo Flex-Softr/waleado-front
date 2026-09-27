@@ -243,8 +243,8 @@ export function CreateBulkCampaignDialog({
   const [scheduleType, setScheduleType] =
     React.useState<ScheduleType>("immediate");
   const [scheduledAt, setScheduledAt] = React.useState("");
-  const [delayMinSec, setDelayMinSec] = React.useState("15");
-  const [delayMaxSec, setDelayMaxSec] = React.useState("45");
+  const [delayMinSec, setDelayMinSec] = React.useState("150");
+  const [delayMaxSec, setDelayMaxSec] = React.useState("200");
   const [maxRetries, setMaxRetries] = React.useState("3");
   const [selectionMode, setSelectionMode] =
     React.useState<SelectionMode>("groups");
@@ -330,8 +330,8 @@ export function CreateBulkCampaignDialog({
         setAttachmentOriginalName("");
         setScheduleType("immediate");
         setScheduledAt("");
-        setDelayMinSec("15");
-        setDelayMaxSec("45");
+        setDelayMinSec("150");
+        setDelayMaxSec("200");
         setMaxRetries("3");
         setSelectionMode("groups");
         setSelectedGroupIds(new Set(loadedGroups.map((x) => x.id)));
@@ -1870,10 +1870,9 @@ export function CreateBulkCampaignDialog({
                           "text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-100"
                         )}
                       >
-                        WhatsApp guideline: minimum 12s is enforced server-side
-                        between sends (about 5 msgs/min max). Recommended:
-                        15–45s for established accounts, 30–60s for new
-                        accounts.
+                        WhatsApp anti-ban guideline: Recommended 150–200s random
+                        delay between sends (approx. 1 message every 2.5–3.5
+                        minutes) to protect your WhatsApp account from being blocked.
                       </div>
                     </div>
                     {scheduleType === "scheduled" ? (
