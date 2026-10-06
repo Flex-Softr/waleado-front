@@ -27,15 +27,31 @@ export function messageTemplateApiToRecord(
 ): MessageTemplateRecord {
   const content = t.content ?? t.body ?? "";
   const rawButtons = t.buttons;
+  let parsedButtons = rawButtons;
+  if (typeof rawButtons === "string") {
+    try {
+      parsedButtons = JSON.parse(rawButtons);
+    } catch {
+      parsedButtons = null;
+    }
+  }
   const buttons =
-    rawButtons && rawButtons.length > 0
-      ? (rawButtons as TemplateInteractiveButton[])
+    parsedButtons && Array.isArray(parsedButtons) && parsedButtons.length > 0
+      ? (parsedButtons as TemplateInteractiveButton[])
       : undefined;
 
   const rawMedia = t.media;
+  let parsedMedia = rawMedia;
+  if (typeof rawMedia === "string") {
+    try {
+      parsedMedia = JSON.parse(rawMedia);
+    } catch {
+      parsedMedia = null;
+    }
+  }
   const media: TemplateMedia | null =
-    rawMedia && typeof rawMedia === "object" && !Array.isArray(rawMedia)
-      ? (rawMedia as TemplateMedia)
+    parsedMedia && typeof parsedMedia === "object" && !Array.isArray(parsedMedia)
+      ? (parsedMedia as TemplateMedia)
       : null;
 
   return {
