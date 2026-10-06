@@ -4,10 +4,11 @@ import type { TemplateFormExtras } from "@/features/templates/types/template-for
 
 export function validateTemplateCreateClient(
   typeId: TemplateTypeId,
-  extras: TemplateFormExtras
+  extras: TemplateFormExtras,
+  hasExistingFile: boolean = false
 ): string | null {
   if (templateTypeNeedsFileUpload(typeId)) {
-    const hasFile = !!extras.mediaFile;
+    const hasFile = !!extras.mediaFile || hasExistingFile;
     const hasUrl = !!extras.externalMediaUrl.trim();
     if (!hasFile && !hasUrl) {
       return "Upload a file or paste a public https URL for this template.";

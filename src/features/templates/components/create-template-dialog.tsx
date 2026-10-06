@@ -150,9 +150,10 @@ export function CreateTemplateDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
-    if (!trimmedName || !content.trim() || submitting) return;
+    if (!trimmedName || (isTextRequired && !content.trim()) || submitting) return;
 
-    const clientErr = validateTemplateCreateClient(typeId, extras);
+    const hasExistingFile = Boolean(editingTemplate?.media && "fileId" in editingTemplate.media && editingTemplate.media.fileId);
+    const clientErr = validateTemplateCreateClient(typeId, extras, hasExistingFile);
     if (clientErr) {
       toast.error("Check the form", { description: clientErr });
       return;
@@ -282,6 +283,17 @@ export function CreateTemplateDialog({
 
   const typeTitle =
     TEMPLATE_TYPE_OPTIONS.find((x) => x.id === typeId)?.label ?? typeId;
+
+  const isTextRequired = [
+    "text_message",
+    "message_buttons",
+    "mixed_interactive",
+    "message_list",
+    "message_carousel",
+    "cta_button",
+    "copy_code",
+    "flow_message"
+  ].includes(typeId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -460,7 +472,7 @@ export function CreateTemplateDialog({
             </Button>
             <Button
               type="submit"
-              disabled={!name.trim() || !content.trim() || submitting}
+              disabled={!name.trim() || (isTextRequired && !content.trim()) || submitting}
             >
               {submitting
                 ? isEdit
