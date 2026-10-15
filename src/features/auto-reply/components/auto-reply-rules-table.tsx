@@ -35,6 +35,21 @@ function modeLabel(m: AutoReplyRule["messageMode"]): string {
       return m;
   }
 }
+
+function getReplySnippet(text: string, maxWords = 8, maxChars = 60): string {
+  if (!text) return "";
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  const words = cleaned.split(" ");
+  if (words.length <= maxWords && cleaned.length <= maxChars) {
+    return cleaned;
+  }
+  let snippet = words.slice(0, maxWords).join(" ");
+  if (snippet.length > maxChars) {
+    snippet = snippet.slice(0, maxChars).trimEnd();
+  }
+  return `${snippet}…`;
+}
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,7 +80,7 @@ export function AutoReplyRulesTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Rule</TableHead>
+          <TableHead className="min-w-[180px] max-w-xs">Rule</TableHead>
           <TableHead>Triggers</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Session</TableHead>
@@ -78,14 +93,19 @@ export function AutoReplyRulesTable({
       <TableBody>
         {rules.map((r) => (
           <TableRow key={r.id}>
-            <TableCell>
-              <div className="min-w-0">
+            <TableCell className="max-w-xs align-top sm:max-w-sm">
+              <div className="min-w-0 max-w-full">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="font-medium text-foreground">{r.name}</p>
+                  <p
+                    className="max-w-full truncate font-medium text-foreground"
+                    title={r.name}
+                  >
+                    {r.name}
+                  </p>
                   {r.aiSkillName ? (
                     <Badge
                       variant="secondary"
-                      className="border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      className="shrink-0 border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
                     >
                       <Sparkles className="mr-1 size-2.5" />
                       Skill: {r.aiSkillName}
@@ -102,9 +122,14 @@ export function AutoReplyRulesTable({
                     Template: {r.templateName}
                   </p>
                 ) : null}
-                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                  {r.response}
-                </p>
+                {r.response?.trim() ? (
+                  <p
+                    className="mt-1 truncate text-xs text-muted-foreground"
+                    title={r.response}
+                  >
+                    {getReplySnippet(r.response)}
+                  </p>
+                ) : null}
               </div>
             </TableCell>
             <TableCell className="max-w-[min(100vw,280px)] align-top">
