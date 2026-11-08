@@ -1,19 +1,22 @@
-import type { PlanId } from "@/types/billing";
+import type { PlanId, PlanSource } from "@/types/billing";
 import type { UserLicense } from "@/types/dashboard";
 
 export type LicenseFromPlanOptions = {
-  subscriptionStatus?: string | null;
-  isTrial?: boolean;
-  isTrialExpired?: boolean;
+  planName?: string;
+  source?: PlanSource;
   daysRemaining?: number | null;
   isAdmin?: boolean;
 };
 
-/** Maps subscription plan and trial state to header / UI license copy */
-export function licenseFromPlan(
-  planId: PlanId,
-  options?: LicenseFromPlanOptions
-): UserLicense {
+const DEFAULT_NAMES: Record<PlanId, string> = {
+  free: "Free",
+  starter: "Starter",
+  pro: "Pro",
+  business: "Business",
+};
+
+/** Maps the current plan to header / banner copy. */
+export function licenseFromPlan(planId: PlanId, options?: LicenseFromPlanOptions): UserLicense {
   if (options?.isAdmin) {
     return {
       tier: "enterprise",
@@ -24,47 +27,53 @@ export function licenseFromPlan(
     };
   }
 
-  if (planId === "pro") {
-    return {
-      tier: "extended",
-      tierLabel: "Pro",
-      statusLabel: "Active",
-      statusVariant: "outline",
-      daysRemaining: options?.daysRemaining ?? undefined,
-      isUpgraded: true,
-    };
-  }
+  const name = options?.planName || DEFAULT_NAMES[planId];
+  const days = options?.daysRemaining ?? undefined;
+  const tier = planId === "business" ? "enterprise" : planId === "free" ? "trial" : "extended";
 
-  if (planId === "business") {
-    return {
-      tier: "enterprise",
-      tierLabel: "Business",
-      statusLabel: "Active",
-      statusVariant: "outline",
-      daysRemaining: options?.daysRemaining ?? undefined,
-      isUpgraded: true,
-    };
+  switch (options?.source) {
+    case "trial":
+      return {
+        tier: "trial",
+        tierLabel: `${name} Trial`,
+        statusLabel: days != null ? `${days}d left` : "Trial",
+        statusVariant: "secondary",
+        daysRemaining: days,
+        isUpgraded: false,
+      };
+    case "lifetime":
+      return {
+        tier,
+        tierLabel: name,
+        statusLabel: "Lifetime",
+        statusVariant: "outline",
+        isUpgraded: true,
+      };
+    case "grace":
+      return {
+        tier,
+        tierLabel: name,
+        statusLabel: "Renew now",
+        statusVariant: "destructive",
+        daysRemaining: 0,
+        isUpgraded: true,
+      };
+    case "paid":
+      return {
+        tier,
+        tierLabel: name,
+        statusLabel: days != null ? `${days}d left` : "Active",
+        statusVariant: "outline",
+        daysRemaining: days,
+        isUpgraded: true,
+      };
+    default:
+      return {
+        tier: "trial",
+        tierLabel: "Free",
+        statusLabel: "Free forever",
+        statusVariant: "secondary",
+        isUpgraded: false,
+      };
   }
-
-  // Free plan / 3-day trial
-  if (options?.isTrialExpired) {
-    return {
-      tier: "trial",
-      tierLabel: "Trial Expired",
-      statusLabel: "Payment Required",
-      statusVariant: "destructive",
-      daysRemaining: 0,
-      isUpgraded: false,
-    };
-  }
-
-  const days = options?.daysRemaining != null ? options.daysRemaining : 3;
-  return {
-    tier: "trial",
-    tierLabel: "3-Day Trial",
-    statusLabel: `${days}d left`,
-    statusVariant: "secondary",
-    daysRemaining: days,
-    isUpgraded: false,
-  };
 }

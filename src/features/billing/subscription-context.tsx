@@ -4,44 +4,80 @@ import * as React from "react";
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { licenseFromPlan } from "@/features/billing/lib/license-from-plan";
+import { fetchBillingSnapshot } from "@/features/billing/lib/billing-api";
 import { apiJson } from "@/lib/api";
 import {
   isPlanId,
+  type BillingSnapshot,
+  type BillingUsage,
+  type CountLimitKey,
   type PaymentGatewayMeta,
+  type PlanFeatureKey,
   type PlanId,
+  type PlanLimits,
+  type PlanSource,
 } from "@/types/billing";
 import type { UserLicense } from "@/types/dashboard";
 
-type BillingApiResponse = {
-  planId: string;
-  subscriptionStatus: string | null;
-  currentPeriodEnd: string | null;
-  trialStartedAt?: string | null;
-  trialEndsAt?: string | null;
-  trialUsed?: boolean;
-  isTrial?: boolean;
-  isTrialExpired?: boolean;
-  hasActiveSubscription?: boolean;
-  daysRemaining?: number | null;
-  stripeConfigured: boolean;
-  stripePortalEligible?: boolean;
-  paymentGateways: PaymentGatewayMeta[];
+const ALL_FEATURES_ON: PlanLimits["features"] = {
+  ai: true,
+  chatbot: true,
+  api: true,
+  groupGrabber: true,
+  callResponder: true,
+  bulkScheduling: true,
+  removeBranding: true,
+};
+
+const UNLIMITED: PlanLimits = {
+  devices: null,
+  messagesPerDay: null,
+  messagesPerMonth: null,
+  contacts: null,
+  bulkRecipientsPerCampaign: null,
+  bulkMessageVariants: 50,
+  autoReplyRules: null,
+  templates: null,
+  chatbotFlows: null,
+  features: ALL_FEATURES_ON,
+};
+
+const EMPTY_USAGE: BillingUsage = {
+  devices: 0,
+  contacts: 0,
+  templates: 0,
+  autoReplyRules: 0,
+  chatbotFlows: 0,
+  messagesToday: 0,
+  messagesThisMonth: 0,
 };
 
 type SubscriptionContextValue = {
   planId: PlanId;
+  planName: string;
+  /** admin | paid | grace | lifetime | trial | free */
+  source: PlanSource;
+  limits: PlanLimits;
+  usage: BillingUsage;
+  /** Full snapshot from the API (null until loaded). */
+  snapshot: BillingSnapshot | null;
   license: UserLicense;
   /** True after auth + billing snapshot loaded (or skipped when logged out). */
   hydrated: boolean;
+  hasFeature: (feature: PlanFeatureKey) => boolean;
+  /** Remaining room under a count limit (null = unlimited). */
+  remaining: (key: CountLimitKey) => number | null;
+  isLifetime: boolean;
+  inGrace: boolean;
   stripeConfigured: boolean;
   stripePortalEligible: boolean;
   subscriptionStatus: string | null;
   currentPeriodEnd: string | null;
-  trialStartedAt: string | null;
   trialEndsAt: string | null;
-  trialUsed: boolean;
   isTrial: boolean;
+  /** Always false now: when a trial ends the workspace moves to the Free plan. */
   isTrialExpired: boolean;
+  /** Always true now that every workspace has at least the Free plan. */
   hasActiveSubscription: boolean;
   daysRemaining: number | null;
   /** Reload plan from API (after checkout, webhook delay, etc.). */
@@ -53,156 +89,56 @@ type SubscriptionContextValue = {
   paymentGateways: PaymentGatewayMeta[];
 };
 
-const SubscriptionContext = React.createContext<SubscriptionContextValue | null>(
-  null
-);
+const SubscriptionContext = React.createContext<SubscriptionContextValue | null>(null);
 
-export function SubscriptionProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user, isBootstrapping: authBootstrapping, workspace } = useAuth();
-  const [planId, setPlanId] = React.useState<PlanId>("free");
+  const [snapshot, setSnapshot] = React.useState<BillingSnapshot | null>(null);
+  const [planOverride, setPlanOverride] = React.useState<PlanId | null>(null);
   const [hydrated, setHydrated] = React.useState(false);
-  const [stripeConfigured, setStripeConfigured] = React.useState(false);
-  const [stripePortalEligible, setStripePortalEligible] = React.useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = React.useState<
-    string | null
-  >(null);
-  const [currentPeriodEnd, setCurrentPeriodEnd] = React.useState<string | null>(
-    null
-  );
-  const [trialStartedAt, setTrialStartedAt] = React.useState<string | null>(null);
-  const [trialEndsAt, setTrialEndsAt] = React.useState<string | null>(null);
-  const [trialUsed, setTrialUsed] = React.useState(false);
-  const [isTrial, setIsTrial] = React.useState(true);
-  const [isTrialExpired, setIsTrialExpired] = React.useState(false);
-  const [hasActiveSubscription, setHasActiveSubscription] = React.useState(true);
-  const [daysRemaining, setDaysRemaining] = React.useState<number | null>(3);
-  const [paymentGateways, setPaymentGateways] = React.useState<
-    PaymentGatewayMeta[]
-  >([]);
 
-  const applyBillingPayload = React.useCallback((data: BillingApiResponse) => {
-    if (user?.role === "ADMIN") {
-      setPlanId("business");
-      setStripeConfigured(data.stripeConfigured);
-      setStripePortalEligible(false);
-      setSubscriptionStatus("active");
-      setCurrentPeriodEnd(null);
-      setPaymentGateways(data.paymentGateways ?? []);
-      setTrialStartedAt(null);
-      setTrialEndsAt(null);
-      setTrialUsed(false);
-      setIsTrial(false);
-      setIsTrialExpired(false);
-      setHasActiveSubscription(true);
-      setDaysRemaining(null);
-      return;
-    }
-
-    if (isPlanId(data.planId)) {
-      setPlanId(data.planId);
-    }
-    setStripeConfigured(data.stripeConfigured);
-    setStripePortalEligible(Boolean(data.stripePortalEligible));
-    setSubscriptionStatus(data.subscriptionStatus);
-    setCurrentPeriodEnd(data.currentPeriodEnd);
-    setPaymentGateways(data.paymentGateways ?? []);
-    setTrialStartedAt(data.trialStartedAt ?? null);
-    setTrialEndsAt(data.trialEndsAt ?? null);
-    setTrialUsed(Boolean(data.trialUsed));
-
-    const isPaid = data.planId === "pro" || data.planId === "business";
-    const trialFlag = Boolean(data.isTrial ?? !isPaid);
-    setIsTrial(trialFlag);
-
-    const expiredFlag = Boolean(
-      data.isTrialExpired ?? (trialFlag && data.subscriptionStatus === "expired")
-    );
-    setIsTrialExpired(expiredFlag);
-
-    const activeSub = Boolean(
-      data.hasActiveSubscription ??
-        (isPaid
-          ? data.subscriptionStatus === "active" || data.subscriptionStatus === "demo"
-          : !expiredFlag)
-    );
-    setHasActiveSubscription(activeSub);
-
-    setDaysRemaining(data.daysRemaining ?? null);
-  }, [user?.role]);
+  const isAdmin = user?.role === "ADMIN";
 
   const refreshPlan = React.useCallback(async () => {
     if (!user) {
-      setPlanId("free");
-      setStripeConfigured(false);
-      setStripePortalEligible(false);
-      setSubscriptionStatus(null);
-      setCurrentPeriodEnd(null);
-      setTrialStartedAt(null);
-      setTrialEndsAt(null);
-      setTrialUsed(false);
-      setIsTrial(true);
-      setIsTrialExpired(false);
-      setHasActiveSubscription(true);
-      setDaysRemaining(null);
-      setPaymentGateways([]);
+      setSnapshot(null);
       return;
     }
-    const data = await apiJson<BillingApiResponse>("/v1/billing");
-    applyBillingPayload(data);
-  }, [user, applyBillingPayload]);
+    const data = await fetchBillingSnapshot();
+    setPlanOverride(null);
+    setSnapshot(data);
+  }, [user]);
 
   React.useEffect(() => {
     if (authBootstrapping) return;
-
     let cancelled = false;
     (async () => {
       if (!user) {
         if (!cancelled) {
-          setPlanId("free");
-          setStripeConfigured(false);
-          setStripePortalEligible(false);
-          setSubscriptionStatus(null);
-          setCurrentPeriodEnd(null);
-          setTrialStartedAt(null);
-          setTrialEndsAt(null);
-          setTrialUsed(false);
-          setIsTrial(true);
-          setIsTrialExpired(false);
-          setHasActiveSubscription(true);
-          setDaysRemaining(null);
-          setPaymentGateways([]);
+          setSnapshot(null);
           setHydrated(true);
         }
         return;
       }
-
       try {
-        const data = await apiJson<BillingApiResponse>("/v1/billing");
+        const data = await fetchBillingSnapshot();
         if (!cancelled) {
-          applyBillingPayload(data);
+          setPlanOverride(null);
+          setSnapshot(data);
         }
       } catch {
-        if (!cancelled) {
-          setPlanId("free");
-        }
+        if (!cancelled) setSnapshot(null);
       } finally {
-        if (!cancelled) {
-          setHydrated(true);
-        }
+        if (!cancelled) setHydrated(true);
       }
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [authBootstrapping, user, workspace?.id, applyBillingPayload]);
+  }, [authBootstrapping, user, workspace?.id]);
 
   const setPlan = React.useCallback((plan: PlanId) => {
-    setPlanId(plan);
+    setPlanOverride(plan);
   }, []);
 
   const resetToFreeDemo = React.useCallback(async () => {
@@ -210,80 +146,66 @@ export function SubscriptionProvider({
     await refreshPlan();
   }, [refreshPlan]);
 
-  const isAdmin = user?.role === "ADMIN";
-  const effectiveIsTrial = isAdmin ? false : isTrial;
-  const effectiveIsTrialExpired = isAdmin ? false : isTrialExpired;
-  const effectiveHasActiveSubscription = isAdmin ? true : hasActiveSubscription;
-  const effectivePlanId = isAdmin ? "business" : planId;
+  const value = React.useMemo<SubscriptionContextValue>(() => {
+    const source: PlanSource = isAdmin ? "admin" : snapshot?.source ?? "free";
+    const apiPlan = snapshot && isPlanId(snapshot.planId) ? snapshot.planId : "free";
+    const planId: PlanId = isAdmin ? "business" : planOverride ?? apiPlan;
+    const limits = isAdmin ? UNLIMITED : snapshot?.limits ?? UNLIMITED;
+    const usage = snapshot?.usage ?? EMPTY_USAGE;
+    const isTrial = source === "trial";
+    const daysRemaining = isAdmin ? null : snapshot?.daysRemaining ?? null;
 
-  const license = React.useMemo(
-    () =>
-      licenseFromPlan(effectivePlanId, {
-        subscriptionStatus: isAdmin ? "active" : subscriptionStatus,
-        isTrial: effectiveIsTrial,
-        isTrialExpired: effectiveIsTrialExpired,
-        daysRemaining: isAdmin ? null : daysRemaining,
-        isAdmin,
-      }),
-    [
-      effectivePlanId,
-      subscriptionStatus,
-      effectiveIsTrial,
-      effectiveIsTrialExpired,
+    const license = licenseFromPlan(planId, {
+      planName: isAdmin ? "Admin Access" : snapshot?.planName,
+      source,
       daysRemaining,
       isAdmin,
-    ]
-  );
+    });
 
-  const value = React.useMemo(
-    () => ({
-      planId: effectivePlanId,
+    const usageFor: Partial<Record<CountLimitKey, number>> = {
+      devices: usage.devices,
+      contacts: usage.contacts,
+      templates: usage.templates,
+      autoReplyRules: usage.autoReplyRules,
+      chatbotFlows: usage.chatbotFlows,
+      messagesPerDay: usage.messagesToday,
+      messagesPerMonth: usage.messagesThisMonth,
+    };
+
+    return {
+      planId,
+      planName: isAdmin ? "Admin" : snapshot?.planName ?? "Free",
+      source,
+      limits,
+      usage,
+      snapshot,
       license,
       hydrated,
-      stripeConfigured,
-      stripePortalEligible,
-      subscriptionStatus: isAdmin ? "active" : subscriptionStatus,
-      currentPeriodEnd,
-      trialStartedAt: isAdmin ? null : trialStartedAt,
-      trialEndsAt: isAdmin ? null : trialEndsAt,
-      trialUsed: isAdmin ? false : trialUsed,
-      isTrial: effectiveIsTrial,
-      isTrialExpired: effectiveIsTrialExpired,
-      hasActiveSubscription: effectiveHasActiveSubscription,
-      daysRemaining: isAdmin ? null : daysRemaining,
-      refreshPlan,
-      setPlan,
-      resetToFreeDemo,
-      paymentGateways,
-    }),
-    [
-      effectivePlanId,
-      license,
-      hydrated,
-      stripeConfigured,
-      stripePortalEligible,
-      isAdmin,
-      subscriptionStatus,
-      currentPeriodEnd,
-      trialStartedAt,
-      trialEndsAt,
-      trialUsed,
-      effectiveIsTrial,
-      effectiveIsTrialExpired,
-      effectiveHasActiveSubscription,
+      hasFeature: (f) => limits.features[f] === true,
+      remaining: (key) => {
+        const max = limits[key];
+        if (max === null) return null;
+        return Math.max(0, max - (usageFor[key] ?? 0));
+      },
+      isLifetime: Boolean(snapshot?.isLifetime),
+      inGrace: Boolean(snapshot?.inGrace),
+      stripeConfigured: Boolean(snapshot?.stripeConfigured),
+      stripePortalEligible: Boolean(snapshot?.stripePortalEligible),
+      subscriptionStatus: isAdmin ? "active" : snapshot?.subscriptionStatus ?? null,
+      currentPeriodEnd: snapshot?.currentPeriodEnd ?? null,
+      trialEndsAt: isAdmin ? null : snapshot?.trial.endsAt ?? null,
+      isTrial,
+      isTrialExpired: false,
+      hasActiveSubscription: true,
       daysRemaining,
       refreshPlan,
       setPlan,
       resetToFreeDemo,
-      paymentGateways,
-    ]
-  );
+      paymentGateways: snapshot?.paymentGateways ?? [],
+    };
+  }, [isAdmin, snapshot, planOverride, hydrated, refreshPlan, setPlan, resetToFreeDemo]);
 
-  return (
-    <SubscriptionContext.Provider value={value}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
+  return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 }
 
 export function useSubscription() {

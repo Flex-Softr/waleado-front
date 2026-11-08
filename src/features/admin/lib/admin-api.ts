@@ -1,3 +1,4 @@
+import type { PlanId, PlanLimits } from "@/types/billing";
 import { apiJson } from "@/lib/api";
 import type {
   AdminOverviewResponse,
@@ -79,7 +80,7 @@ export async function listAdminSubscriptions(input: {
   page: number;
   pageSize: number;
   q?: string;
-  plan?: "free" | "pro" | "business";
+  plan?: "free" | "starter" | "pro" | "business";
   excludeAdmin?: boolean;
 }) {
   return apiJson<AdminSubscriptionsListResponse>(
@@ -90,7 +91,8 @@ export async function listAdminSubscriptions(input: {
 export async function updateAdminSubscription(
   workspaceId: string,
   body: {
-    plan: "free" | "pro" | "business";
+    plan: "free" | "starter" | "pro" | "business";
+    lifetime?: boolean;
     subscriptionStatus?: string | null;
     currentPeriodEnd?: string | null;
   }
@@ -138,3 +140,89 @@ export async function rejectAdminPayment(paymentId: string) {
 }
 
 export type { AdminPaymentRow, AdminSubscriptionRow, AdminUserRow };
+
+// ---------------------------------------------------------------------------
+// Billing configuration (packages, prices, trial)
+// ---------------------------------------------------------------------------
+
+
+export type AdminPrice = {
+  id: string;
+  months: number;
+  isLifetime: boolean;
+  amountBdt: number;
+  compareAtBdt: number | null;
+  amountUsd: number | null;
+  label: string | null;
+  isActive: boolean;
+  saleCap: number | null;
+  saleEndsAt: string | null;
+  sold: number;
+  remaining: number | null;
+};
+
+export type AdminPlan = {
+  id: PlanId;
+  name: string;
+  tagline: string | null;
+  isPublic: boolean;
+  highlight: boolean;
+  sortOrder: number;
+  limits: PlanLimits;
+  highlights: string[];
+  prices: AdminPrice[];
+};
+
+export type AdminBillingSettings = {
+  trialDays: number;
+  trialPlanId: PlanId;
+  graceDays: number;
+  brandingFooter: string;
+};
+
+export type AdminBillingConfig = {
+  settings: AdminBillingSettings;
+  plans: AdminPlan[];
+};
+
+export type AdminPriceUpdate = {
+  planId: Exclude<PlanId, "free">;
+  months: number;
+  amountBdt: number;
+  compareAtBdt?: number | null;
+  amountUsd?: number | null;
+  label?: string | null;
+  isActive: boolean;
+  saleCap?: number | null;
+  saleEndsAt?: string | null;
+  remove?: boolean;
+};
+
+export type AdminPlanUpdate = Omit<AdminPlan, "prices" | "id"> & { planId: PlanId };
+
+export type AdminBillingStats = {
+  workspacesByPlan: Record<PlanId, number>;
+  lifetimeByPlan: Record<PlanId, number>;
+  revenueThisMonth: number;
+  paidInvoicesThisMonth: number;
+};
+
+export function fetchAdminBillingConfig() {
+  return apiJson<AdminBillingConfig>("/v1/admin/billing/config");
+}
+
+export function saveAdminBillingConfig(input: {
+  settings?: AdminBillingSettings;
+  plans?: AdminPlanUpdate[];
+  prices?: AdminPriceUpdate[];
+}) {
+  return apiJson<AdminBillingConfig>("/v1/admin/billing/config", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export function fetchAdminBillingStats() {
+  return apiJson<AdminBillingStats>("/v1/admin/billing/stats");
+}

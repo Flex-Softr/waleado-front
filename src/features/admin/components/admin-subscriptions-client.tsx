@@ -34,7 +34,20 @@ import {
 import { TablePagination } from "@/components/ui/table-pagination";
 import { useControlledPagination } from "@/hooks/use-pagination";
 
-type PlanId = "free" | "pro" | "business";
+type PlanId = "free" | "starter" | "pro" | "business";
+
+/** Select value: plan id, optionally suffixed with ":lifetime". */
+type PlanChoice = PlanId | `${Exclude<PlanId, "free">}:lifetime`;
+
+const PLAN_CHOICES: { value: PlanChoice; label: string }[] = [
+  { value: "free", label: "Free" },
+  { value: "starter", label: "Starter (30 days)" },
+  { value: "pro", label: "Pro (30 days)" },
+  { value: "business", label: "Business (30 days)" },
+  { value: "starter:lifetime", label: "Starter — lifetime" },
+  { value: "pro:lifetime", label: "Pro — lifetime" },
+  { value: "business:lifetime", label: "Business — lifetime" },
+];
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";
@@ -67,6 +80,7 @@ export function AdminSubscriptionsClient() {
   const [planTarget, setPlanTarget] = React.useState<{
     row: AdminSubscriptionRow;
     plan: PlanId;
+    lifetime: boolean;
   } | null>(null);
 
   const load = React.useCallback(async () => {
@@ -112,9 +126,10 @@ export function AdminSubscriptionsClient() {
     try {
       await updateAdminSubscription(planTarget.row.workspaceId, {
         plan: planTarget.plan,
+        lifetime: planTarget.lifetime,
       });
       toast.success("Subscription updated", {
-        description: `${planTarget.row.name} → ${planTarget.plan.toUpperCase()}`,
+        description: `${planTarget.row.name} → ${planTarget.plan.toUpperCase()}${planTarget.lifetime ? " (lifetime)" : ""}`,
       });
       await load();
     } catch (err) {
@@ -154,6 +169,7 @@ export function AdminSubscriptionsClient() {
               items={[
                 { value: "all", label: "All plans" },
                 { value: "free", label: "Free" },
+                { value: "starter", label: "Starter" },
                 { value: "pro", label: "Pro" },
                 { value: "business", label: "Business" },
               ]}
@@ -164,6 +180,7 @@ export function AdminSubscriptionsClient() {
               <SelectContent>
                 <SelectItem value="all">All plans</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="starter">Starter</SelectItem>
                 <SelectItem value="pro">Pro</SelectItem>
                 <SelectItem value="business">Business</SelectItem>
               </SelectContent>
@@ -249,6 +266,11 @@ export function AdminSubscriptionsClient() {
                         <Badge className={planBadgeClass(row.plan)}>
                           {row.plan.toUpperCase()}
                         </Badge>
+                        {row.lifetimePlan ? (
+                          <Badge variant="outline" className="ml-1 text-[10px]">
+                            Lifetime {row.lifetimePlan}
+                          </Badge>
+                        ) : null}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {row.subscriptionStatus || "—"}
@@ -261,25 +283,26 @@ export function AdminSubscriptionsClient() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Select
-                          value={row.plan}
+                          value={(row.lifetimePlan === row.plan && row.plan !== "free"
+                            ? `${row.plan}:lifetime`
+                            : row.plan) as PlanChoice}
                           onValueChange={(v) => {
-                            const plan = v as PlanId | null;
-                            if (!plan || plan === row.plan) return;
-                            setPlanTarget({ row, plan });
+                            const choice = v as PlanChoice | null;
+                            if (!choice) return;
+                            const [plan, life] = choice.split(":") as [PlanId, string | undefined];
+                            setPlanTarget({ row, plan, lifetime: life === "lifetime" });
                           }}
-                          items={[
-                            { value: "free", label: "Free" },
-                            { value: "pro", label: "Pro" },
-                            { value: "business", label: "Business" },
-                          ]}
+                          items={PLAN_CHOICES}
                         >
                           <SelectTrigger size="sm" className="ml-auto">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="free">Free</SelectItem>
-                            <SelectItem value="pro">Pro</SelectItem>
-                            <SelectItem value="business">Business</SelectItem>
+                            {PLAN_CHOICES.map((c) => (
+                              <SelectItem key={c.value} value={c.value}>
+                                {c.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -303,7 +326,7 @@ export function AdminSubscriptionsClient() {
         title="Change subscription plan?"
         description={
           planTarget
-            ? `Set “${planTarget.row.name}” from ${planTarget.row.plan.toUpperCase()} to ${planTarget.plan.toUpperCase()}.`
+            ? `Set “${planTarget.row.name}” from ${planTarget.row.plan.toUpperCase()} to ${planTarget.plan.toUpperCase()}${planTarget.lifetime ? " for life" : planTarget.plan === "free" ? " (removes any lifetime plan)" : " for 30 days"}.`
             : null
         }
         confirmLabel="Update plan"

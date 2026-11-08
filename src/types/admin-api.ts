@@ -21,7 +21,7 @@ export type AdminUserWorkspace = {
   id: string;
   name: string;
   slug: string;
-  plan: "free" | "pro" | "business";
+  plan: "free" | "starter" | "pro" | "business";
   membershipRole: "OWNER" | "ADMIN" | "MEMBER";
 };
 
@@ -46,7 +46,9 @@ export type AdminSubscriptionRow = {
   workspaceId: string;
   name: string;
   slug: string;
-  plan: "free" | "pro" | "business";
+  plan: "free" | "starter" | "pro" | "business";
+  lifetimePlan?: "free" | "starter" | "pro" | "business" | null;
+  billingMonths?: number | null;
   subscriptionStatus: string | null;
   currentPeriodEnd: string | null;
   lastPaymentGateway: string | null;
@@ -80,7 +82,7 @@ export type AdminPaymentRow = {
     id: string;
     name: string;
     slug: string;
-    plan: "free" | "pro" | "business";
+    plan: "free" | "starter" | "pro" | "business";
   };
 };
 

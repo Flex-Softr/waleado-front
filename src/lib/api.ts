@@ -45,29 +45,58 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    /** Structured error context (e.g. which plan limit was reached). */
+    public details?: Record<string, unknown>
   ) {
     super(message);
     this.name = "ApiError";
   }
 }
 
+/** Plan limit errors carry upgrade info instead of field validation details. */
+export const PLAN_ERROR_CODES = new Set(["PLAN_LIMIT_REACHED", "PLAN_FEATURE_LOCKED"]);
+
+/** Window event fired when an action is blocked by the current plan. */
+export const PLAN_UPGRADE_EVENT = "waleado:plan-upgrade";
+
+export type PlanUpgradeEventDetail = {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+};
+
+function announcePlanError(err: ApiError, method: string | undefined): void {
+  // Only for user actions (not page loads), so dialogs never pop up on navigation.
+  const m = (method ?? "GET").toUpperCase();
+  if (m === "GET" || !err.code || !PLAN_ERROR_CODES.has(err.code)) return;
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<PlanUpgradeEventDetail>(PLAN_UPGRADE_EVENT, {
+      detail: { code: err.code, message: err.message, details: err.details },
+    })
+  );
+}
+
 async function parseError(res: Response): Promise<ApiError> {
   try {
     const body = (await res.json()) as {
-      error?: { code?: string; message?: string; details?: Record<string, string[] | string> };
+      error?: { code?: string; message?: string; details?: Record<string, unknown> };
     };
     let msg = body.error?.message ?? res.statusText;
+    const code = body.error?.code;
+    if (code && PLAN_ERROR_CODES.has(code)) {
+      return new ApiError(res.status, msg, code, body.error?.details);
+    }
     if (body.error?.details && typeof body.error.details === "object") {
       const detailEntries = Object.entries(body.error.details);
       if (detailEntries.length > 0) {
         const detailsStr = detailEntries
-          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`)
           .join("; ");
         msg = `${msg} (${detailsStr})`;
       }
     }
-    const code = body.error?.code;
     return new ApiError(res.status, msg, code);
   } catch {
     return new ApiError(res.status, res.statusText);
@@ -169,7 +198,9 @@ export async function apiFetch(
 export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await apiFetch(path, init);
   if (!res.ok) {
-    throw await parseError(res);
+    const err = await parseError(res);
+    announcePlanError(err, init.method);
+    throw err;
   }
   if (res.status === 204) {
     return undefined as T;
@@ -184,7 +215,9 @@ export async function apiFormJson<T>(path: string, formData: FormData): Promise<
     body: formData,
   });
   if (!res.ok) {
-    throw await parseError(res);
+    const err = await parseError(res);
+    announcePlanError(err, "POST");
+    throw err;
   }
   return res.json() as Promise<T>;
 }

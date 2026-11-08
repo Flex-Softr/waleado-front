@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { getPlanById } from "@/config/plans";
 import { useSubscription } from "@/features/billing/subscription-context";
 import type { PlanId } from "@/types/billing";
 import { isPlanId } from "@/types/billing";
@@ -74,9 +73,8 @@ export function BillingSuccessClient() {
         if (isPlanId(data.planId)) {
           setPlan(data.planId);
           await refreshPlan();
-          const name = getPlanById(data.planId)?.name ?? data.planId;
-          toast.success("Subscription active", {
-            description: `You are on the ${name} plan.`,
+          toast.success("Payment confirmed", {
+            description: "Your plan is now active.",
           });
         } else if (data.demo) {
           await refreshPlan();

@@ -35,7 +35,7 @@ import {
 
 export function AppHeader() {
   const router = useRouter();
-  const { license, hydrated, isTrial, isTrialExpired, daysRemaining } = useSubscription();
+  const { license, hydrated } = useSubscription();
   const { user: authUser, logout } = useAuth();
   const { setTheme, resolvedTheme } = useTheme();
   const { isCollapsed, toggleSidebar } = useSidebar();
@@ -107,21 +107,13 @@ export function AppHeader() {
                   <span
                     className={cn(
                       "absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full ring-2 ring-background",
-                      authUser?.role === "ADMIN" || license.isUpgraded
-                        ? "bg-emerald-500"
-                        : isTrialExpired
+                      license.statusVariant === "destructive"
                         ? "bg-rose-500"
+                        : authUser?.role === "ADMIN" || license.isUpgraded
+                        ? "bg-emerald-500"
                         : "bg-amber-500"
                     )}
-                    title={
-                      authUser?.role === "ADMIN"
-                        ? "Administrator — Full Access"
-                        : license.isUpgraded
-                        ? "Active subscription"
-                        : isTrialExpired
-                        ? "Trial expired — payment required"
-                        : `3-day trial active (${daysRemaining ?? 3}d left)`
-                    }
+                    title={`${license.tierLabel} — ${license.statusLabel}`}
                   />
                 )}
               </div>
@@ -136,17 +128,18 @@ export function AppHeader() {
                       <span className="rounded-full bg-purple-500/10 px-1.5 py-0.2 text-[9px] font-bold text-purple-600 dark:bg-purple-500/20 dark:text-purple-400">
                         ADMIN
                       </span>
-                    ) : license.isUpgraded ? (
-                      <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                        {license.tierLabel.toUpperCase()}
-                      </span>
-                    ) : isTrialExpired ? (
-                      <span className="rounded-full bg-rose-500/10 px-1.5 py-0.2 text-[9px] font-bold text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
-                        EXPIRED
-                      </span>
                     ) : (
-                      <span className="rounded-full bg-amber-500/10 px-1.5 py-0.2 text-[9px] font-bold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
-                        TRIAL
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.2 text-[9px] font-bold",
+                          license.statusVariant === "destructive"
+                            ? "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400"
+                            : license.isUpgraded
+                            ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
+                            : "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400"
+                        )}
+                      >
+                        {license.tierLabel.toUpperCase()}
                       </span>
                     )
                   )}
@@ -155,13 +148,7 @@ export function AppHeader() {
                   {hydrated
                     ? authUser?.role === "ADMIN"
                       ? "Full Access"
-                      : license.isUpgraded && license.daysRemaining != null
-                      ? `${license.daysRemaining}d left`
-                      : isTrialExpired
-                      ? "Payment required"
-                      : isTrial
-                      ? `${daysRemaining ?? 3}d left`
-                      : license.tierLabel
+                      : license.statusLabel
                     : "…"}
                 </span>
               </div>
@@ -197,19 +184,19 @@ export function AppHeader() {
                   <div className="flex items-center gap-1.5">
                     <Badge
                       variant={
-                        authUser?.role === "ADMIN" || license.isUpgraded
-                          ? "default"
-                          : isTrialExpired
+                        license.statusVariant === "destructive"
                           ? "destructive"
+                          : authUser?.role === "ADMIN" || license.isUpgraded
+                          ? "default"
                           : "secondary"
                       }
                       className="text-[10px] font-semibold px-2 py-0.5"
                     >
                       {hydrated ? (authUser?.role === "ADMIN" ? "Admin Access" : license.tierLabel) : "…"}
                     </Badge>
-                    {hydrated && authUser?.role !== "ADMIN" && !license.isUpgraded && !isTrialExpired && daysRemaining != null && (
+                    {hydrated && authUser?.role !== "ADMIN" && (
                       <span className="text-[10px] text-muted-foreground font-medium">
-                        ({daysRemaining}d left)
+                        ({license.statusLabel})
                       </span>
                     )}
                   </div>

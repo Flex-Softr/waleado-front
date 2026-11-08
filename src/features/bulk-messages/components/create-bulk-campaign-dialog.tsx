@@ -30,7 +30,6 @@ import {
   aiSettingsFormValid,
   buildAiSettingsPayload,
 } from "@/features/bulk-messages/lib/ai-settings-form";
-import { maxBulkMessageContentsForPlan } from "@/features/bulk-messages/lib/bulk-message-plan-limits";
 import type {
   CreateBulkCampaignPayload,
   CreateBulkCampaignResponse,
@@ -204,8 +203,8 @@ export function CreateBulkCampaignDialog({
   onCreated,
 }: CreateBulkCampaignDialogProps) {
   const { groups, groupStats, globalStats, refreshGroups } = useContacts();
-  const { planId } = useSubscription();
-  const maxMessageContents = maxBulkMessageContentsForPlan(planId);
+  const { limits } = useSubscription();
+  const maxMessageContents = limits.bulkMessageVariants;
 
   const [contextLoading, setContextLoading] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);

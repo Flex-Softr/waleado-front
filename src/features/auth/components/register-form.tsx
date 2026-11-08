@@ -17,13 +17,25 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api";
 import { buildGoogleOAuthStartUrl } from "@/lib/auth-api";
 
+/** Sends visitors who picked a plan on the landing page straight to its checkout. */
+function postSignupPath(): string {
+  if (typeof window === "undefined") return "/";
+  const q = new URLSearchParams(window.location.search);
+  const plan = q.get("plan");
+  if (plan === "starter" || plan === "pro" || plan === "business") {
+    const months = q.get("months");
+    return `/billing?plan=${plan}${months && /^\d+$/.test(months) ? `&months=${months}` : ""}`;
+  }
+  return "/";
+}
+
 export function RegisterForm() {
   const router = useRouter();
   const { register, user, isBootstrapping } = useAuth();
 
   React.useEffect(() => {
     if (!isBootstrapping && user) {
-      router.replace("/");
+      router.replace(postSignupPath());
     }
   }, [isBootstrapping, user, router]);
 
@@ -51,7 +63,7 @@ export function RegisterForm() {
         name: name.trim() || undefined,
       });
       toast.success("Account created");
-      router.replace("/");
+      router.replace(postSignupPath());
     } catch (err) {
       const msg =
         err instanceof ApiError
@@ -150,7 +162,7 @@ export function RegisterForm() {
         type="button"
         variant="outline"
         className="h-11 w-full rounded-xl border-slate-200/90 bg-white font-medium dark:border-slate-700 dark:bg-slate-950/50"
-        onClick={() => window.location.assign(buildGoogleOAuthStartUrl("/"))}
+        onClick={() => window.location.assign(buildGoogleOAuthStartUrl(postSignupPath()))}
       >
         <GoogleBrandIcon className="mr-2 size-5 shrink-0" />
         Continue with Google

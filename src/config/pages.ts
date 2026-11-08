@@ -100,6 +100,10 @@ export const PAGE_META = {
     title: "Payments",
     description: "Verify and reconcile payment transactions.",
   },
+  "/admin/pricing": {
+    title: "Pricing",
+    description: "Edit packages, prices, lifetime deals and the free trial.",
+  },
   "/login": {
     title: "Sign in",
     description: "Access your Waleado workspace.",

@@ -18,6 +18,7 @@ import {
   Users,
   FileText,
   Wallet,
+ Tags,
 } from "lucide-react";
 
 import type { AuthUserRole } from "@/types/auth";
@@ -203,6 +204,12 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
         description: "Verify payment transactions",
         href: "/admin/payments",
         icon: Wallet,
+      },
+      {
+        title: "Pricing",
+        description: "Packages, prices & trial",
+        href: "/admin/pricing",
+        icon: Tags,
       },
     ],
   },
