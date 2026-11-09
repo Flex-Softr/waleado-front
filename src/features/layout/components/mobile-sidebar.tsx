@@ -34,7 +34,7 @@ export function MobileSidebar() {
         side="left"
         className="w-[280px] gap-0 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground sm:w-[280px]"
       >
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col pb-[env(safe-area-inset-bottom)]">
           <div className="flex h-[68px] shrink-0 items-center border-b border-sidebar-border px-4">
             <BrandMark />
           </div>

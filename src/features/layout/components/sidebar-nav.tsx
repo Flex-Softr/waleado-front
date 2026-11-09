@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { getNavGroupsForRole } from "@/config/navigation";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function SidebarNav({
   onNavigate,
@@ -24,7 +23,8 @@ export function SidebarNav({
       : pathname;
 
   return (
-    <ScrollArea className="min-h-0 flex-1 px-3 py-2">
+    // Native scrolling: reliable touch scrolling inside the mobile menu (a dialog that locks page scroll).
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 [scrollbar-width:thin]">
       <nav className="flex flex-col gap-3 pb-4">
         {navGroups.map((group, groupIndex) => (
           <div key={group.title || groupIndex} className="flex flex-col gap-1">
@@ -81,6 +81,6 @@ export function SidebarNav({
           </div>
         ))}
       </nav>
-    </ScrollArea>
+    </div>
   );
 }
