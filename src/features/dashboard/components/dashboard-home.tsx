@@ -43,7 +43,7 @@ export function DashboardHome() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const requestSeq = React.useRef(0);
-  const loadedIdentity = React.useRef<string | null>(null);
+  const [loadedIdentity, setLoadedIdentity] = React.useState<string | null>(null);
 
   const load = React.useCallback(async (soft = false) => {
     const seq = ++requestSeq.current;
@@ -57,7 +57,7 @@ export function DashboardHome() {
       );
       if (seq !== requestSeq.current) return;
       setData(json);
-      loadedIdentity.current = identityKey;
+      setLoadedIdentity(identityKey);
       setError(null);
     } catch (e) {
       if (seq !== requestSeq.current) return;
@@ -89,7 +89,7 @@ export function DashboardHome() {
   }, [load]);
 
   const showSkeleton =
-    loading && (!data || loadedIdentity.current !== identityKey);
+    loading && (!data || loadedIdentity !== identityKey);
 
   if (showSkeleton) {
     return (
