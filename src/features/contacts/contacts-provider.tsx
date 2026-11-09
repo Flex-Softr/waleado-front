@@ -86,8 +86,11 @@ export function ContactsProvider({ children }: { children: React.ReactNode }) {
   const [contactsByGroup, setContactsByGroup] = React.useState<
     Record<string, ContactRow[]>
   >({});
+  // Lets the stable callbacks below see the latest loaded groups without re-creating them.
   const contactsByGroupRef = React.useRef(contactsByGroup);
-  contactsByGroupRef.current = contactsByGroup;
+  React.useEffect(() => {
+    contactsByGroupRef.current = contactsByGroup;
+  }, [contactsByGroup]);
 
   const refreshGroups = React.useCallback(async () => {
     const data = await apiJson<ContactGroupsListResponse>("/v1/contact-groups");

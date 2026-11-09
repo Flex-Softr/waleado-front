@@ -275,15 +275,6 @@ export function LiveChatClient() {
     void loadThreads();
   }, [deviceId, loadThreads]);
 
-  React.useEffect(() => {
-    if (!selectedThreadId) {
-      setMessages([]);
-      setMessagesCursor(null);
-      return;
-    }
-    void loadMessages(selectedThreadId, { reset: true });
-  }, [selectedThreadId]);
-
   const loadMessages = React.useCallback(
     async (
       threadId: string,
@@ -328,6 +319,15 @@ export function LiveChatClient() {
     },
     [messagesCursor]
   );
+
+  React.useEffect(() => {
+    if (!selectedThreadId) {
+      setMessages([]);
+      setMessagesCursor(null);
+      return;
+    }
+    void loadMessages(selectedThreadId, { reset: true });
+  }, [selectedThreadId]);
 
   React.useEffect(() => {
     if (!selectedThreadId) return;

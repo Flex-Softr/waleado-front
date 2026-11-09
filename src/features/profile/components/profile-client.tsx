@@ -81,12 +81,13 @@ export function ProfileClient() {
 
   // Profile fields state
   const [name, setName] = React.useState(user?.name ?? "");
+  const userPhone = user?.phone;
   const initialPhone = React.useMemo(() => {
-    if (user?.phone) {
-      return splitE164Phone(user.phone);
+    if (userPhone) {
+      return splitE164Phone(userPhone);
     }
     return { iso2: DEFAULT_PHONE_COUNTRY_ISO2, localNumber: "" };
-  }, [user?.phone]);
+  }, [userPhone]);
 
   const [countryIso2, setCountryIso2] = React.useState(initialPhone.iso2);
   const [localNumber, setLocalNumber] = React.useState(initialPhone.localNumber);

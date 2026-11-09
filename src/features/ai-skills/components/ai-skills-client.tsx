@@ -594,7 +594,7 @@ function AiSkillFormDialog({
                   4. Additional Guidelines & Rules (Optional)
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Guardrails, dos & don'ts, or special tone rules.
+                  Guardrails, dos &amp; don&apos;ts, or special tone rules.
                 </p>
                 <Textarea
                   id="skill-instructions"

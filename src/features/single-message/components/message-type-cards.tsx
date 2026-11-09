@@ -7,17 +7,19 @@ import { cn } from "@/lib/utils";
 export type MessageFormType = "text" | "template";
 export type SingleMessageFormType = "text" | "template" | "media";
 
-type MessageTypeCardsProps = {
-  value: SingleMessageFormType;
-  onChange: (value: any) => void;
+type MessageTypeCardsProps<T extends SingleMessageFormType> = {
+  value: T;
+  /** Receives "media" only when `includeMedia` is set, so T may be the narrower MessageFormType. */
+  onChange: (value: T) => void;
   includeMedia?: boolean;
 };
 
-export function MessageTypeCards({
+export function MessageTypeCards<T extends SingleMessageFormType>({
   value,
-  onChange,
+  onChange: onChangeTyped,
   includeMedia = false,
-}: MessageTypeCardsProps) {
+}: MessageTypeCardsProps<T>) {
+  const onChange = (next: SingleMessageFormType) => onChangeTyped(next as T);
   return (
     <div
       className={cn(
