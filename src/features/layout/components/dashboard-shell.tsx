@@ -5,7 +5,8 @@ import { SidebarProvider } from "@/features/layout/sidebar-context";
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+      {/* h-dvh, not h-screen: on phones 100vh is taller than the visible area, hiding content under the browser bar. */}
+      <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col h-full overflow-hidden bg-background">
           <AppHeader />
