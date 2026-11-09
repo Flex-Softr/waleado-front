@@ -104,6 +104,22 @@ export const PAGE_META = {
     title: "Pricing",
     description: "Edit packages, prices, lifetime deals and the free trial.",
   },
+  "/admin/invoices": {
+    title: "Invoices",
+    description: "Record manual payments and manage open invoices.",
+  },
+  "/admin/coupons": {
+    title: "Coupons",
+    description: "Discount codes for campaigns and founding members.",
+  },
+  "/admin/reports": {
+    title: "Billing reports",
+    description: "Revenue, MRR, conversion and wallet balances.",
+  },
+  "/admin/messaging": {
+    title: "System messaging",
+    description: "WhatsApp sender, email, OTP and message templates.",
+  },
   "/login": {
     title: "Sign in",
     description: "Access your Waleado workspace.",

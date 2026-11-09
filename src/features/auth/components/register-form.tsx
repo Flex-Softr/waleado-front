@@ -18,15 +18,20 @@ import { ApiError } from "@/lib/api";
 import { buildGoogleOAuthStartUrl } from "@/lib/auth-api";
 
 /** Sends visitors who picked a plan on the landing page straight to its checkout. */
+/** Where to go after sign-up: straight to checkout when the visitor picked a plan or has a coupon link. */
 function postSignupPath(): string {
   if (typeof window === "undefined") return "/";
   const q = new URLSearchParams(window.location.search);
+  const out = new URLSearchParams();
   const plan = q.get("plan");
   if (plan === "starter" || plan === "pro" || plan === "business") {
+    out.set("plan", plan);
     const months = q.get("months");
-    return `/billing?plan=${plan}${months && /^\d+$/.test(months) ? `&months=${months}` : ""}`;
+    if (months && /^\d+$/.test(months)) out.set("months", months);
   }
-  return "/";
+  const coupon = q.get("coupon");
+  if (coupon && /^[A-Za-z0-9_-]{3,32}$/.test(coupon)) out.set("coupon", coupon);
+  return out.size ? `/billing?${out}` : "/";
 }
 
 export function RegisterForm() {

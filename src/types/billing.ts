@@ -4,6 +4,14 @@ export type PaidPlanId = Exclude<PlanId, "free">;
 export const PLAN_IDS: PlanId[] = ["free", "starter", "pro", "business"];
 export const PAID_PLAN_IDS: PaidPlanId[] = ["starter", "pro", "business"];
 
+/** Default display names (admins can rename plans; use the catalog name when you have it). */
+export const PLAN_LABELS: Record<PlanId, string> = {
+  free: "Free",
+  starter: "Starter",
+  pro: "Pro",
+  business: "Business",
+};
+
 export function isPlanId(value: string): value is PlanId {
   return (PLAN_IDS as string[]).includes(value);
 }
@@ -76,6 +84,9 @@ export const LIMIT_LABELS: Record<CountLimitKey, string> = {
 /** months = 0 means lifetime. */
 export const LIFETIME_MONTHS = 0;
 
+/** Billing cycles the product sells, in months (0 = lifetime). */
+export const BILLING_CYCLES = [1, 3, 6, 12, LIFETIME_MONTHS];
+
 export type PricingPrice = {
   months: number;
   isLifetime: boolean;
@@ -141,7 +152,7 @@ export type BillingSnapshot = {
   paymentGateways: PaymentGatewayMeta[];
 };
 
-export type InvoiceKind = "new" | "renewal" | "upgrade";
+export type InvoiceKind = "new" | "renewal" | "upgrade" | "topup";
 
 export type BillingQuote = {
   planId: PaidPlanId;
@@ -149,8 +160,16 @@ export type BillingQuote = {
   months: number;
   isLifetime: boolean;
   kind: InvoiceKind;
+  /** List price. */
   subtotal: number;
+  /** Coupon discount. */
+  discount: number;
+  coupon: { code: string; description: string } | null;
+  /** Credit from the plan being replaced. */
   credit: number;
+  /** Paid from the wallet. */
+  walletAmount: number;
+  /** Left to pay through a gateway. */
   total: number;
   currency: string;
   amountUsd: number | null;
@@ -160,34 +179,62 @@ export type BillingQuote = {
   bonusDays: number;
 };
 
+export type InvoiceStatus = "unpaid" | "paid" | "cancelled";
+
 export type BillingInvoice = {
   id: string;
   number: string;
-  planId: PlanId;
+  planId: PlanId | null;
   months: number;
   isLifetime: boolean;
   cycle: string;
   kind: InvoiceKind;
   subtotal: number;
+  discount: number;
   credit: number;
+  walletAmount: number;
   total: number;
   currency: string;
-  status: "unpaid" | "paid" | "cancelled";
+  status: InvoiceStatus;
   gateway: string | null;
+  paymentRef: string | null;
   description: string;
   periodStart: string | null;
   periodEnd: string | null;
   paidAt: string | null;
   createdAt: string;
+  /** Present while unpaid: token for the login-free pay page (/pay/:token). */
+  payToken: string | null;
 };
 
 export type BillingInvoiceDetail = BillingInvoice & {
+  couponCode: string | null;
   billedTo: {
     workspace: string;
     name: string | null;
     email: string | null;
     phone: string | null;
   };
+};
+
+export type WalletTransactionType = "topup" | "invoice_payment" | "invoice_refund" | "adjustment";
+
+export type WalletTransaction = {
+  id: string;
+  amount: number;
+  balanceAfter: number;
+  type: WalletTransactionType;
+  invoiceNumber: string | null;
+  note: string | null;
+  createdAt: string;
+};
+
+export type WalletSnapshot = {
+  balance: number;
+  autoRenew: boolean;
+  minTopup: number;
+  maxTopup: number;
+  transactions: WalletTransaction[];
 };
 
 export type CheckoutResponse =
@@ -214,3 +261,26 @@ export function cycleSuffix(months: number): string {
 export function formatBdt(n: number): string {
   return `৳${Math.round(n).toLocaleString("en-US")}`;
 }
+
+/** What the login-free pay page (/pay/:token) gets about an invoice. */
+export type PublicPayInvoice = {
+  number: string;
+  description: string;
+  status: InvoiceStatus;
+  subtotal: number;
+  discount: number;
+  couponCode: string | null;
+  credit: number;
+  walletAmount: number;
+  total: number;
+  amountUsd: number | null;
+  currency: string;
+  createdAt: string;
+  paidAt: string | null;
+  workspace: string;
+};
+
+export type PublicPayResponse = {
+  invoice: PublicPayInvoice;
+  gateways: PaymentGatewayMeta[];
+};

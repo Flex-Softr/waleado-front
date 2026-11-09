@@ -1,13 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, TicketPercent, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { useSubscription } from "@/features/billing/subscription-context";
 import { fetchQuote, startCheckout } from "@/features/billing/lib/billing-api";
+import { PaymentMethodPicker } from "@/features/billing/components/payment-method-picker";
 import { ApiError } from "@/lib/api";
+import { normalizeBdPhone } from "@/lib/bd-phone";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,84 +20,91 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import {
-  cycleLabel,
-  formatBdt,
-  type BillingQuote,
-  type PaidPlanId,
-  type PaymentGatewayId,
-} from "@/types/billing";
+import { cycleLabel, formatBdt, type BillingQuote, type PaidPlanId, type PaymentGatewayId } from "@/types/billing";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "Never (lifetime)";
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-/** Normalises a Bangladeshi phone to +880… for SSLCommerz. */
-function normalizePhone(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("880")) return `+${digits}`;
-  if (digits.startsWith("0")) return `+880${digits.slice(1)}`;
-  return `+880${digits}`;
-}
+const KIND_LABEL: Record<BillingQuote["kind"], string> = {
+  new: "New plan",
+  renewal: "Renewal",
+  upgrade: "Upgrade",
+  topup: "Wallet top-up",
+};
 
-const KIND_LABEL = { new: "New plan", renewal: "Renewal", upgrade: "Upgrade" } as const;
+type QuoteState = { key: string; quote: BillingQuote | null; error: string | null };
+
+function Row({ label, value, tone }: { label: string; value: string; tone?: "credit" | "total" | "muted" }) {
+  return (
+    <div
+      className={
+        tone === "total"
+          ? "flex justify-between border-t pt-2 text-base font-bold"
+          : tone === "credit"
+          ? "flex justify-between text-emerald-700 dark:text-emerald-400"
+          : tone === "muted"
+          ? "flex justify-between text-xs text-muted-foreground"
+          : "flex justify-between"
+      }
+    >
+      <dt className={tone ? undefined : "text-muted-foreground"}>{label}</dt>
+      <dd className="font-medium">{value}</dd>
+    </div>
+  );
+}
 
 export function CheckoutDialog({
   target,
+  initialCoupon,
   onClose,
   onActivated,
 }: {
   target: { planId: PaidPlanId; months: number } | null;
+  /** Coupon code to try first (e.g. from a ?coupon= link). */
+  initialCoupon?: string | null;
   onClose: () => void;
   onActivated: () => Promise<void>;
 }) {
   const { user } = useAuth();
   const { paymentGateways } = useSubscription();
-  const targetKey = target ? `${target.planId}:${target.months}` : null;
-  const [result, setResult] = React.useState<{
-    key: string;
-    quote: BillingQuote | null;
-    error: string | null;
-  } | null>(null);
+  const [couponInput, setCouponInput] = React.useState(initialCoupon ?? "");
+  const [appliedCoupon, setAppliedCoupon] = React.useState<string | null>(initialCoupon ?? null);
+  const [useWallet, setUseWallet] = React.useState(true);
+  const [state, setState] = React.useState<QuoteState | null>(null);
   const [paying, setPaying] = React.useState(false);
   const [gatewayChoice, setGatewayChoice] = React.useState<PaymentGatewayId | null>(null);
   const [phone, setPhone] = React.useState("");
   const accountPhone = user?.phone?.trim() || "";
 
+  const quoteKey = target ? `${target.planId}:${target.months}:${appliedCoupon ?? ""}:${useWallet}` : null;
+
   React.useEffect(() => {
-    if (!target || !targetKey) return;
+    if (!target || !quoteKey) return;
     let cancelled = false;
-    fetchQuote(target.planId, target.months)
-      .then((q) => !cancelled && setResult({ key: targetKey, quote: q, error: null }))
-      .catch(
-        (e) =>
-          !cancelled &&
-          setResult({
-            key: targetKey,
-            quote: null,
-            error: e instanceof ApiError ? e.message : "Could not price this plan.",
-          })
-      );
+    fetchQuote(target.planId, target.months, { couponCode: appliedCoupon, useWallet })
+      .then((quote) => !cancelled && setState({ key: quoteKey, quote, error: null }))
+      .catch((e) => {
+        if (cancelled) return;
+        // A bad coupon shouldn't block checkout: drop it and price without it.
+        if (e instanceof ApiError && e.code === "COUPON_INVALID") {
+          toast.error(e.message);
+          setAppliedCoupon(null);
+          return;
+        }
+        setState({ key: quoteKey, quote: null, error: e instanceof ApiError ? e.message : "Could not price this plan." });
+      });
     return () => {
       cancelled = true;
     };
-  }, [target, targetKey]);
+  }, [target, quoteKey, appliedCoupon, useWallet]);
 
-  const current = result && result.key === targetKey ? result : null;
+  const current = state && state.key === quoteKey ? state : null;
   const quote = current?.quote ?? null;
-  const error = current?.error ?? null;
   const loading = target !== null && current === null;
-
-  const sslReady = paymentGateways.some((g) => g.id === "sslcommerz" && g.configured);
-  const stripeReady =
-    paymentGateways.some((g) => g.id === "stripe" && g.configured) && quote?.amountUsd != null;
-  const gateway: PaymentGatewayId =
-    gatewayChoice ?? (!sslReady && stripeReady ? "stripe" : "sslcommerz");
-  const setGateway = setGatewayChoice;
+  const stripeReady = paymentGateways.some((g) => g.id === "stripe" && g.configured);
+  const gateway: PaymentGatewayId = gatewayChoice ?? "sslcommerz";
 
   async function pay() {
     if (!target || !quote) return;
@@ -104,9 +113,10 @@ export function CheckoutDialog({
       const out = await startCheckout({
         planId: target.planId,
         months: target.months,
+        couponCode: appliedCoupon,
+        useWallet,
         gateway,
-        customerPhone:
-          gateway === "sslcommerz" ? accountPhone || normalizePhone(phone) || undefined : undefined,
+        customerPhone: gateway === "sslcommerz" ? accountPhone || normalizeBdPhone(phone) || undefined : undefined,
       });
       if ("url" in out) {
         window.location.href = out.url;
@@ -122,97 +132,81 @@ export function CheckoutDialog({
     }
   }
 
+  const walletCanHelp = quote ? quote.walletAmount > 0 || !useWallet : false;
+
   return (
     <Dialog open={target !== null} onOpenChange={(open) => !open && !paying && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {quote ? `${quote.planName} — ${cycleLabel(quote.months)}` : "Checkout"}
-          </DialogTitle>
-          <DialogDescription>
-            {quote ? KIND_LABEL[quote.kind] : "Calculating your price…"}
-          </DialogDescription>
+          <DialogTitle>{quote ? `${quote.planName} — ${cycleLabel(quote.months)}` : "Checkout"}</DialogTitle>
+          <DialogDescription>{quote ? KIND_LABEL[quote.kind] : "Calculating your price…"}</DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
-        ) : error ? (
-          <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">{error}</p>
+        ) : current?.error ? (
+          <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">{current.error}</p>
         ) : quote ? (
           <div className="space-y-4">
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setAppliedCoupon(couponInput.trim() || null);
+              }}
+            >
+              <div className="relative flex-1">
+                <TicketPercent className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  className="pl-8 uppercase"
+                  placeholder="Coupon code"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                />
+              </div>
+              <Button type="submit" variant="outline">
+                Apply
+              </Button>
+            </form>
+
             <dl className="space-y-2 rounded-lg border p-4 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Price</dt>
-                <dd className="font-medium">{formatBdt(quote.subtotal)}</dd>
-              </div>
+              <Row label="Price" value={formatBdt(quote.subtotal)} />
+              {quote.discount > 0 && quote.coupon ? (
+                <Row label={`Coupon ${quote.coupon.code} (${quote.coupon.description})`} value={`−${formatBdt(quote.discount)}`} tone="credit" />
+              ) : null}
               {quote.credit > 0 ? (
-                <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
-                  <dt>Credit from your current plan</dt>
-                  <dd className="font-medium">−{formatBdt(Math.min(quote.credit, quote.subtotal))}</dd>
-                </div>
+                <Row
+                  label="Credit from your current plan"
+                  value={`−${formatBdt(Math.min(quote.credit, quote.subtotal - quote.discount))}`}
+                  tone="credit"
+                />
               ) : null}
-              {quote.bonusDays > 0 ? (
-                <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
-                  <dt>Extra days from leftover credit</dt>
-                  <dd className="font-medium">+{quote.bonusDays} days</dd>
-                </div>
-              ) : null}
-              <div className="flex justify-between border-t pt-2 text-base font-bold">
-                <dt>Total today</dt>
-                <dd>{formatBdt(quote.total)}</dd>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <dt>{quote.kind === "renewal" ? "New end date" : "Active until"}</dt>
-                <dd>{formatDate(quote.periodEnd)}</dd>
-              </div>
+              {quote.bonusDays > 0 ? <Row label="Extra days from leftover credit" value={`+${quote.bonusDays} days`} tone="credit" /> : null}
+              {quote.walletAmount > 0 ? <Row label="Paid from wallet" value={`−${formatBdt(quote.walletAmount)}`} tone="credit" /> : null}
+              <Row label="To pay now" value={formatBdt(quote.total)} tone="total" />
+              <Row label={quote.kind === "renewal" ? "New end date" : "Active until"} value={formatDate(quote.periodEnd)} tone="muted" />
             </dl>
 
+            {walletCanHelp ? (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={useWallet} onChange={(e) => setUseWallet(e.target.checked)} />
+                <Wallet className="size-4 text-muted-foreground" />
+                Use my wallet balance
+              </label>
+            ) : null}
+
             {quote.total > 0 ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: "sslcommerz" as const, name: "bKash / Nagad / Card", sub: "SSLCommerz · BDT", ready: true },
-                    {
-                      id: "stripe" as const,
-                      name: "International card",
-                      sub: quote.amountUsd != null ? `Stripe · $${quote.amountUsd.toFixed(2)}` : "Stripe · not available",
-                      ready: stripeReady,
-                    },
-                  ].map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      disabled={!g.ready}
-                      onClick={() => setGateway(g.id)}
-                      className={cn(
-                        "rounded-lg border p-3 text-left text-sm transition-all disabled:cursor-not-allowed disabled:opacity-50",
-                        gateway === g.id && g.ready && "border-emerald-500 ring-2 ring-emerald-500/30"
-                      )}
-                    >
-                      <p className="font-semibold">{g.name}</p>
-                      <p className="text-xs text-muted-foreground">{g.sub}</p>
-                    </button>
-                  ))}
-                </div>
-                {gateway === "sslcommerz" && !accountPhone ? (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="checkout-phone">Mobile number</Label>
-                    <Input
-                      id="checkout-phone"
-                      inputMode="tel"
-                      placeholder="01XXXXXXXXX"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
-                ) : null}
-              </div>
+              <PaymentMethodPicker
+                value={gateway}
+                onChange={setGatewayChoice}
+                stripeEnabled={stripeReady}
+                usdAmount={quote.amountUsd}
+                phoneField={accountPhone ? undefined : { value: phone, onChange: setPhone }}
+              />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Your credit covers the full price — nothing to pay.
-              </p>
+              <p className="text-sm text-muted-foreground">Nothing to pay by card — your wallet or credit covers it.</p>
             )}
           </div>
         ) : null}

@@ -8,6 +8,7 @@ import {
   listAdminSubscriptions,
   updateAdminSubscription,
 } from "@/features/admin/lib/admin-api";
+import { WorkspaceBillingDialog } from "@/features/admin/workspace-billing/workspace-billing-dialog";
 import { ConfirmDestructiveDialog } from "@/features/shared/components/confirm-destructive-dialog";
 import { ListEmptyState } from "@/features/shared/components/list-empty-state";
 import type { AdminSubscriptionRow } from "@/types/admin-api";
@@ -82,6 +83,7 @@ export function AdminSubscriptionsClient() {
     plan: PlanId;
     lifetime: boolean;
   } | null>(null);
+  const [billingTarget, setBillingTarget] = React.useState<AdminSubscriptionRow | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -233,6 +235,7 @@ export function AdminSubscriptionsClient() {
                     <TableHead>Status</TableHead>
                     <TableHead>Period end</TableHead>
                     <TableHead className="text-right">Set plan</TableHead>
+                    <TableHead className="text-right">Billing</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -306,6 +309,11 @@ export function AdminSubscriptionsClient() {
                           </SelectContent>
                         </Select>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" onClick={() => setBillingTarget(row)}>
+                          Manage
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -317,6 +325,12 @@ export function AdminSubscriptionsClient() {
           )}
         </CardContent>
       </Card>
+
+      <WorkspaceBillingDialog
+        target={billingTarget ? { workspaceId: billingTarget.workspaceId, name: billingTarget.name } : null}
+        onClose={() => setBillingTarget(null)}
+        onChanged={() => void load()}
+      />
 
       <ConfirmDestructiveDialog
         open={!!planTarget}

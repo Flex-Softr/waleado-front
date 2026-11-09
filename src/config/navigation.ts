@@ -18,7 +18,11 @@ import {
   Users,
   FileText,
   Wallet,
- Tags,
+  Tags,
+  ReceiptText,
+  TicketPercent,
+  BarChart3,
+  MessageSquareText,
 } from "lucide-react";
 
 import type { AuthUserRole } from "@/types/auth";
@@ -206,10 +210,39 @@ export const ADMIN_NAV_GROUPS: NavGroup[] = [
         icon: Wallet,
       },
       {
+        title: "Invoices",
+        description: "Manual payments & cancellations",
+        href: "/admin/invoices",
+        icon: ReceiptText,
+      },
+      {
         title: "Pricing",
         description: "Packages, prices & trial",
         href: "/admin/pricing",
         icon: Tags,
+      },
+      {
+        title: "Coupons",
+        description: "Discount codes",
+        href: "/admin/coupons",
+        icon: TicketPercent,
+      },
+      {
+        title: "Reports",
+        description: "Revenue, MRR & conversion",
+        href: "/admin/reports",
+        icon: BarChart3,
+      },
+    ],
+  },
+  {
+    title: "System",
+    items: [
+      {
+        title: "Messaging",
+        description: "Sender device, OTP & templates",
+        href: "/admin/messaging",
+        icon: MessageSquareText,
       },
     ],
   },
