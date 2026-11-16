@@ -19,6 +19,7 @@ import type {
   FollowUpView,
   LeadStage,
 } from "@/types/follow-ups-api";
+import { FollowUpSettingsCard } from "@/features/follow-ups/components/follow-up-settings-card";
 import { ListEmptyState } from "@/features/shared/components/list-empty-state";
 import { useSessionIdentity } from "@/hooks/use-session-identity";
 import { ApiError, apiJson } from "@/lib/api";
@@ -361,6 +362,8 @@ export function FollowUpsClient() {
           the message. Check the list here and mark anyone who already bought as Converted.
         </p>
       </div>
+
+      <FollowUpSettingsCard />
 
       <div className="flex flex-wrap gap-2">
         {VIEWS.map((v) => (

@@ -38,3 +38,19 @@ export type FollowUpPatch = {
   followUpStatus?: "SCHEDULED" | "CANCELED";
   needsHuman?: boolean;
 };
+
+export type FollowUpSettings = {
+  /** False until the owner saves once (then the browser timezone is suggested). */
+  configured: boolean;
+  autoSend: boolean;
+  timezone: string;
+  windowStartHour: number;
+  windowEndHour: number;
+  maxFollowUps: number;
+  dailyLimitPerDevice: number;
+  idleHours: number;
+  maxDays: number;
+  instructions: string;
+};
+
+export type FollowUpSettingsResponse = { settings: FollowUpSettings };
