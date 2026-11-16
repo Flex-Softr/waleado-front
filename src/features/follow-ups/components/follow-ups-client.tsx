@@ -5,7 +5,9 @@ import {
   CalendarClock,
   CheckCircle2,
   Loader2,
+  Plus,
   Send,
+  Trash2,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -22,7 +24,8 @@ import type {
 import { FollowUpSettingsCard } from "@/features/follow-ups/components/follow-up-settings-card";
 import { ListEmptyState } from "@/features/shared/components/list-empty-state";
 import { useSessionIdentity } from "@/hooks/use-session-identity";
-import { ApiError, apiJson } from "@/lib/api";
+import { AddFollowUpDialog } from "@/features/follow-ups/components/add-follow-up-dialog";
+import { ApiError, apiFetch, apiJson } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,9 +34,10 @@ import { Textarea } from "@/components/ui/textarea";
 
 const VIEWS: { id: FollowUpView; label: string; hint: string }[] = [
   { id: "today", label: "Today", hint: "Conversations from today" },
+  { id: "suggested", label: "To approve", hint: "AI suggestions waiting for your approval" },
   { id: "scheduled", label: "Scheduled", hint: "Follow-ups waiting to go out" },
   { id: "converted", label: "Converted", hint: "Customers who bought" },
-  { id: "all", label: "All", hint: "Everyone the AI talked to" },
+  { id: "all", label: "All", hint: "Everyone in your follow-up list" },
 ];
 
 const STAGE_LABEL: Record<LeadStage, string> = {
@@ -91,9 +95,11 @@ function errMessage(err: unknown, fallback: string): string {
 function FollowUpCard({
   item,
   onChange,
+  onRemove,
 }: {
   item: FollowUpApi;
   onChange: (next: FollowUpApi) => void;
+  onRemove: (id: string) => void;
 }) {
   const [date, setDate] = React.useState(toLocalInput(item.followUpAt));
   const [message, setMessage] = React.useState(item.followUpMessage ?? "");
@@ -101,6 +107,7 @@ function FollowUpCard({
 
   const closed = item.stage === "CONVERTED" || item.stage === "LOST";
   const scheduled = item.followUpStatus === "SCHEDULED";
+  const suggested = item.followUpStatus === "SUGGESTED";
   const dirty =
     date !== toLocalInput(item.followUpAt) ||
     message.trim() !== (item.followUpMessage ?? "").trim();
@@ -118,6 +125,20 @@ function FollowUpCard({
     } catch (err) {
       toast.error("Could not update", { description: errMessage(err, "Please try again.") });
     } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`Remove ${item.displayTitle} from your follow-up list?`)) return;
+    setBusy("remove");
+    try {
+      const res = await apiFetch(`/v1/follow-ups/${item.id}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) throw new ApiError(res.status, res.statusText);
+      onRemove(item.id);
+      toast.success("Removed from follow-ups");
+    } catch (err) {
+      toast.error("Could not remove", { description: errMessage(err, "Please try again.") });
       setBusy(null);
     }
   }
@@ -168,6 +189,9 @@ function FollowUpCard({
                 Needs you
               </Badge>
             ) : null}
+            {item.source === "MANUAL" ? (
+              <Badge variant="secondary">Added by you</Badge>
+            ) : null}
             <Badge variant="secondary" className={STAGE_STYLE[item.stage]}>
               {STAGE_LABEL[item.stage]}
             </Badge>
@@ -175,8 +199,13 @@ function FollowUpCard({
         </div>
 
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          {item.summary || "No summary yet."}
+          {item.summary || (item.source === "MANUAL" ? "" : "No summary yet.")}
         </p>
+        {item.note ? (
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            <span className="font-medium">Your note:</span> {item.note}
+          </p>
+        ) : null}
         <p className="text-xs text-muted-foreground">
           Last chat {formatWhen(item.lastConversationAt)}
           {item.followUpsSent > 0
@@ -192,8 +221,15 @@ function FollowUpCard({
             <div className="flex flex-wrap items-center gap-2">
               <CalendarClock className="size-4 text-muted-foreground" />
               <span className="text-sm font-medium">
-                {scheduled ? "Follow-up planned" : "No follow-up planned"}
+                {scheduled
+                  ? "Follow-up planned"
+                  : suggested
+                    ? "AI suggestion — waiting for your approval"
+                    : "No follow-up planned"}
               </span>
+              {scheduled || suggested ? (
+                <Badge variant="secondary">{item.manualLock ? "You control" : "AI controls"}</Badge>
+              ) : null}
               <Input
                 type="datetime-local"
                 value={date}
@@ -219,17 +255,20 @@ function FollowUpCard({
                   onClick={() =>
                     patch(
                       "save",
-                      {
-                        followUpAt: fromLocalInput(date),
-                        followUpMessage: message,
-                        followUpStatus: "SCHEDULED",
-                      },
-                      "Follow-up saved"
+                      // Approving untouched keeps the AI in control; edits make it your plan.
+                      dirty
+                        ? {
+                            followUpAt: fromLocalInput(date),
+                            followUpMessage: message,
+                            followUpStatus: "SCHEDULED",
+                          }
+                        : { followUpStatus: "SCHEDULED" },
+                      suggested && !dirty ? "Follow-up approved" : "Follow-up saved"
                     )
                   }
                 >
                   {busy === "save" ? <Loader2 className="size-4 animate-spin" /> : null}
-                  {scheduled ? "Save changes" : "Schedule"}
+                  {scheduled ? "Save changes" : suggested ? "Approve" : "Schedule"}
                 </Button>
               ) : null}
               <Button
@@ -242,7 +281,7 @@ function FollowUpCard({
                 {busy === "send" ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 Send now
               </Button>
-              {scheduled ? (
+              {scheduled || suggested ? (
                 <Button
                   type="button"
                   size="sm"
@@ -254,6 +293,17 @@ function FollowUpCard({
                 >
                   <XCircle className="size-4" />
                   Not needed
+                </Button>
+              ) : null}
+              {item.manualLock && item.source === "AI" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy !== null}
+                  onClick={() => patch("unlock", { manualLock: false }, "The AI will plan this one again")}
+                >
+                  Let AI plan
                 </Button>
               ) : null}
             </div>
@@ -309,6 +359,17 @@ function FollowUpCard({
               Handled
             </Button>
           ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="ml-auto text-muted-foreground"
+            disabled={busy !== null}
+            onClick={remove}
+          >
+            {busy === "remove" ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            Remove
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -320,7 +381,11 @@ export function FollowUpsClient() {
   const [view, setView] = React.useState<FollowUpView>("today");
   const [loaded, setLoaded] = React.useState<{ key: string; items: FollowUpApi[] } | null>(null);
 
-  const requestKey = `${view}|${routeKey}`;
+  const [reloadTick, setReloadTick] = React.useState(0);
+  const [adding, setAdding] = React.useState(false);
+  const [approvingAll, setApprovingAll] = React.useState(false);
+
+  const requestKey = `${view}|${routeKey}|${reloadTick}`;
   const loading = loaded?.key !== requestKey;
   const items = loaded && loaded.key === requestKey ? loaded.items : [];
 
@@ -351,18 +416,42 @@ export function FollowUpsClient() {
     );
   }
 
+  function removeItem(id: string) {
+    setLoaded((prev) => (prev ? { ...prev, items: prev.items.filter((i) => i.id !== id) } : prev));
+  }
+
+  async function approveAll() {
+    if (!window.confirm("Approve every AI suggestion in this list?")) return;
+    setApprovingAll(true);
+    try {
+      const res = await apiJson<{ approved: number }>("/v1/follow-ups/approve-all", { method: "POST" });
+      toast.success(`${res.approved} follow-up${res.approved === 1 ? "" : "s"} approved`);
+      setReloadTick((t) => t + 1);
+    } catch (err) {
+      toast.error("Could not approve", { description: errMessage(err, "Please try again.") });
+    } finally {
+      setApprovingAll(false);
+    }
+  }
+
   const current = VIEWS.find((v) => v.id === view);
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-          Follow-ups
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          After each AI conversation, the AI writes a summary, picks a follow-up date and drafts
-          the message. Check the list here and mark anyone who already bought as Converted.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+            Follow-ups
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your follow-up list. Add any number yourself, or let the AI suggest a date and
+            message after each chat. Mark anyone who already bought as Converted.
+          </p>
+        </div>
+        <Button type="button" className="gap-2" onClick={() => setAdding(true)}>
+          <Plus className="size-4" />
+          Add to follow-up
+        </Button>
       </div>
 
       <FollowUpSettingsCard />
@@ -380,7 +469,15 @@ export function FollowUpsClient() {
           </Button>
         ))}
       </div>
-      {current ? <p className="text-xs text-muted-foreground">{current.hint}</p> : null}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {current ? <p className="text-xs text-muted-foreground">{current.hint}</p> : <span />}
+        {view === "suggested" && items.length > 0 ? (
+          <Button type="button" size="sm" variant="secondary" disabled={approvingAll} onClick={approveAll}>
+            {approvingAll ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+            Approve all
+          </Button>
+        ) : null}
+      </div>
 
       {loading ? (
         <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
@@ -390,7 +487,7 @@ export function FollowUpsClient() {
         <ListEmptyState
           icon={CalendarClock}
           title="Nothing here yet"
-          description="Conversations appear about two hours after the AI's last reply with a customer."
+          description="Add a number yourself, or wait for the AI: chats appear about two hours after its last reply."
         />
       ) : (
         <div className="space-y-3">
@@ -400,10 +497,22 @@ export function FollowUpsClient() {
               key={`${item.id}|${item.followUpAt}|${item.followUpMessage}|${item.followUpStatus}`}
               item={item}
               onChange={replaceItem}
+              onRemove={removeItem}
             />
           ))}
         </div>
       )}
+
+      {adding ? (
+        <AddFollowUpDialog
+          onClose={() => setAdding(false)}
+          onAdded={() => {
+            // Show the new entry where it lives: the Scheduled list.
+            if (view === "scheduled") setReloadTick((t) => t + 1);
+            else setView("scheduled");
+          }}
+        />
+      ) : null}
     </div>
   );
 }

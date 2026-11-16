@@ -6,7 +6,9 @@ export type LeadStage =
   | "CONVERTED"
   | "LOST";
 
-export type FollowUpStatus = "NONE" | "SCHEDULED" | "SENT" | "CANCELED";
+export type FollowUpStatus = "NONE" | "SCHEDULED" | "SENT" | "CANCELED" | "SUGGESTED";
+
+export type FollowUpAiMode = "AUTO" | "SUGGEST" | "OFF";
 
 export type FollowUpApi = {
   id: string;
@@ -18,6 +20,10 @@ export type FollowUpApi = {
   summary: string;
   needsHuman: boolean;
   followUpStatus: FollowUpStatus;
+  source: "AI" | "MANUAL";
+  /** True when the owner controls the plan (the AI will not change it). */
+  manualLock: boolean;
+  note: string;
   followUpAt: string | null;
   followUpMessage: string | null;
   followUpsSent: number;
@@ -29,7 +35,9 @@ export type FollowUpApi = {
 export type FollowUpsListResponse = { items: FollowUpApi[] };
 export type FollowUpMutationResponse = { item: FollowUpApi };
 
-export type FollowUpView = "today" | "scheduled" | "converted" | "all";
+export type FollowUpView = "today" | "suggested" | "scheduled" | "converted" | "all";
+
+export type FollowUpCreateResponse = { item: FollowUpApi; everMessaged: boolean };
 
 export type FollowUpPatch = {
   stage?: LeadStage;
@@ -37,12 +45,15 @@ export type FollowUpPatch = {
   followUpMessage?: string | null;
   followUpStatus?: "SCHEDULED" | "CANCELED";
   needsHuman?: boolean;
+  manualLock?: boolean;
+  note?: string | null;
 };
 
 export type FollowUpSettings = {
   /** False until the owner saves once (then the browser timezone is suggested). */
   configured: boolean;
   autoSend: boolean;
+  aiMode: FollowUpAiMode;
   timezone: string;
   windowStartHour: number;
   windowEndHour: number;
