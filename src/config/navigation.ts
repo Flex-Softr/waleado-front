@@ -23,6 +23,7 @@ import {
   TicketPercent,
   BarChart3,
   MessageSquareText,
+  CalendarClock,
 } from "lucide-react";
 
 import type { AuthUserRole } from "@/types/auth";
@@ -78,6 +79,12 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Gemini & OpenRouter keys",
         href: "/ai-credentials",
         icon: KeyRound,
+      },
+      {
+        title: "Follow-ups",
+        description: "Daily review & AI follow-ups",
+        href: "/follow-ups",
+        icon: CalendarClock,
       },
       {
         title: "Chatbot",
