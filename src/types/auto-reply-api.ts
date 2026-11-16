@@ -23,6 +23,8 @@ export type AutoReplyRuleApi = {
   openAiSettings: Record<string, unknown> | null;
   aiSkillId?: string | null;
   aiSkillName?: string | null;
+  conversationHours?: number;
+  fallbackForNewChats?: boolean;
   active: boolean;
   responseCount: number;
   createdAt: string;

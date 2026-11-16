@@ -29,6 +29,10 @@ export type AutoReplyRule = {
   openAiSettings: Record<string, unknown> | null;
   aiSkillId?: string | null;
   aiSkillName?: string | null;
+  /** Hours the AI keeps answering a contact without keywords (0 = off). */
+  conversationHours?: number;
+  /** AI answers private chats that match no keyword. */
+  fallbackForNewChats?: boolean;
   active: boolean;
   responseCount: number;
   createdAt: string;

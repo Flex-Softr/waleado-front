@@ -186,6 +186,8 @@ export function CreateAutoReplyRuleDialog({
   const [openAi, setOpenAi] = React.useState<AiSettingsForm>(openAiDefaults);
   const [aiSkills, setAiSkills] = React.useState<AiSkillApi[]>([]);
   const [aiSkillId, setAiSkillId] = React.useState("");
+  const [conversationHours, setConversationHours] = React.useState("24");
+  const [fallbackForNewChats, setFallbackForNewChats] = React.useState(false);
   const [active, setActive] = React.useState(true);
 
   React.useEffect(() => {
@@ -231,9 +233,13 @@ export function CreateAutoReplyRuleDialog({
           setOpenAiEnabled(editingRule.openAiEnabled || Boolean(editingRule.aiSkillId));
           setOpenAi(parseOpenAiFromRule(editingRule.openAiSettings));
           setAiSkillId(editingRule.aiSkillId ?? "");
+          setConversationHours(String(editingRule.conversationHours ?? 24));
+          setFallbackForNewChats(editingRule.fallbackForNewChats ?? false);
           setActive(editingRule.active);
         } else {
           setName("");
+          setConversationHours("24");
+          setFallbackForNewChats(false);
           setKeyword("");
           setTriggerType("contains");
           setCaseSensitive(false);
@@ -330,7 +336,8 @@ export function CreateAutoReplyRuleDialog({
 
   const setupOk =
     name.trim().length > 0 &&
-    keyword.trim().length > 0 &&
+    (keyword.trim().length > 0 ||
+      (fallbackForNewChats && (openAiEnabled || Boolean(aiSkillId.trim())))) &&
     deviceId.length > 0;
 
   const aiOk = openAiOk;
@@ -462,6 +469,12 @@ export function CreateAutoReplyRuleDialog({
       openAiEnabled: openAiEnabled || Boolean(aiSkillId.trim()),
       openAiSettings: openAiEnabled && openAi.credentialId ? openAiPayload : null,
       aiSkillId: aiSkillId.trim() ? aiSkillId.trim() : null,
+      conversationHours: Math.min(
+        336,
+        Math.max(0, Number.parseInt(conversationHours, 10) || 0)
+      ),
+      fallbackForNewChats:
+        fallbackForNewChats && (openAiEnabled || Boolean(aiSkillId.trim())),
       active,
     };
 
@@ -1171,6 +1184,53 @@ export function CreateAutoReplyRuleDialog({
                             </div>
                           </div>
                         </div>
+
+                        {openAiEnabled || Boolean(aiSkillId) ? (
+                          <div className="space-y-4 rounded-xl border border-sky-200/80 bg-sky-50/40 p-4 dark:border-sky-900/50 dark:bg-sky-950/20">
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="ar-conversation-hours"
+                                className="text-sm font-semibold"
+                              >
+                                Keep chatting without keywords (hours)
+                              </Label>
+                              <Input
+                                id="ar-conversation-hours"
+                                type="number"
+                                min={0}
+                                max={336}
+                                value={conversationHours}
+                                onChange={(e) => setConversationHours(e.target.value)}
+                                className={fieldClass}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                After the AI replies, it keeps answering that contact for this
+                                long (from its last reply) with no keyword needed. It stops if
+                                you reply yourself or the contact sends &quot;stop&quot;.
+                                0 = keyword needed for every message.
+                              </p>
+                            </div>
+                            <label className="flex cursor-pointer items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={fallbackForNewChats}
+                                onChange={(e) => setFallbackForNewChats(e.target.checked)}
+                                className="mt-0.5 size-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                              />
+                              <span className="text-sm">
+                                <span className="font-medium text-slate-800 dark:text-slate-200">
+                                  Also answer new chats that match no keyword
+                                </span>
+                                <span className="mt-0.5 block text-xs text-muted-foreground">
+                                  Off by default. Applies to private chats only (never groups).
+                                  Turn on only for a business number: otherwise the AI would
+                                  reply to personal contacts too. With this on, the keyword
+                                  above can be left empty.
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        ) : null}
 
                         <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200/90 bg-slate-50/50 px-4 py-3.5 dark:border-slate-800 dark:bg-slate-900/40">
                           <input
