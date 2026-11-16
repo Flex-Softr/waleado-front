@@ -99,12 +99,6 @@ function FollowUpCard({
   const [message, setMessage] = React.useState(item.followUpMessage ?? "");
   const [busy, setBusy] = React.useState<string | null>(null);
 
-  // Keep drafts in sync when the server row changes (reload, AI re-analysis).
-  React.useEffect(() => {
-    setDate(toLocalInput(item.followUpAt));
-    setMessage(item.followUpMessage ?? "");
-  }, [item.followUpAt, item.followUpMessage, item.followUpStatus]);
-
   const closed = item.stage === "CONVERTED" || item.stage === "LOST";
   const scheduled = item.followUpStatus === "SCHEDULED";
   const dirty =
@@ -324,29 +318,37 @@ function FollowUpCard({
 export function FollowUpsClient() {
   const { routeKey } = useSessionIdentity();
   const [view, setView] = React.useState<FollowUpView>("today");
-  const [items, setItems] = React.useState<FollowUpApi[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [loaded, setLoaded] = React.useState<{ key: string; items: FollowUpApi[] } | null>(null);
 
-  const load = React.useCallback(async (v: FollowUpView) => {
-    setLoading(true);
-    try {
-      const qs = new URLSearchParams({ view: v });
-      if (v === "today") qs.set("since", startOfLocalDayIso());
-      const res = await apiJson<FollowUpsListResponse>(`/v1/follow-ups?${qs.toString()}`);
-      setItems(res.items);
-    } catch (err) {
-      toast.error("Load failed", { description: errMessage(err, "Could not load follow-ups.") });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const requestKey = `${view}|${routeKey}`;
+  const loading = loaded?.key !== requestKey;
+  const items = loaded && loaded.key === requestKey ? loaded.items : [];
 
   React.useEffect(() => {
-    void load(view);
-  }, [load, view, routeKey]);
+    let cancelled = false;
+    (async () => {
+      let result: FollowUpApi[] = [];
+      try {
+        const qs = new URLSearchParams({ view });
+        if (view === "today") qs.set("since", startOfLocalDayIso());
+        const res = await apiJson<FollowUpsListResponse>(`/v1/follow-ups?${qs.toString()}`);
+        result = res.items;
+      } catch (err) {
+        if (!cancelled) {
+          toast.error("Load failed", { description: errMessage(err, "Could not load follow-ups.") });
+        }
+      }
+      if (!cancelled) setLoaded({ key: requestKey, items: result });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [view, requestKey]);
 
   function replaceItem(next: FollowUpApi) {
-    setItems((prev) => prev.map((i) => (i.id === next.id ? next : i)));
+    setLoaded((prev) =>
+      prev ? { ...prev, items: prev.items.map((i) => (i.id === next.id ? next : i)) } : prev
+    );
   }
 
   const current = VIEWS.find((v) => v.id === view);
@@ -393,7 +395,12 @@ export function FollowUpsClient() {
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
-            <FollowUpCard key={item.id} item={item} onChange={replaceItem} />
+            <FollowUpCard
+              // Remount when the saved plan changes so the edit boxes reset to the server values.
+              key={`${item.id}|${item.followUpAt}|${item.followUpMessage}|${item.followUpStatus}`}
+              item={item}
+              onChange={replaceItem}
+            />
           ))}
         </div>
       )}
