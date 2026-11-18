@@ -25,12 +25,12 @@ import { FollowUpSettingsCard } from "@/features/follow-ups/components/follow-up
 import { ListEmptyState } from "@/features/shared/components/list-empty-state";
 import { useSessionIdentity } from "@/hooks/use-session-identity";
 import { AddFollowUpDialog } from "@/features/follow-ups/components/add-follow-up-dialog";
+import { FollowUpMessageField } from "@/features/follow-ups/components/follow-up-message-field";
 import { ApiError, apiFetch, apiJson } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 const VIEWS: { id: FollowUpView; label: string; hint: string }[] = [
   { id: "today", label: "Today", hint: "Conversations from today" },
@@ -103,6 +103,7 @@ function FollowUpCard({
 }) {
   const [date, setDate] = React.useState(toLocalInput(item.followUpAt));
   const [message, setMessage] = React.useState(item.followUpMessage ?? "");
+  const [templateId, setTemplateId] = React.useState<string | null>(item.followUpTemplateId);
   const [busy, setBusy] = React.useState<string | null>(null);
 
   const closed = item.stage === "CONVERTED" || item.stage === "LOST";
@@ -110,7 +111,9 @@ function FollowUpCard({
   const suggested = item.followUpStatus === "SUGGESTED";
   const dirty =
     date !== toLocalInput(item.followUpAt) ||
-    message.trim() !== (item.followUpMessage ?? "").trim();
+    message.trim() !== (item.followUpMessage ?? "").trim() ||
+    templateId !== item.followUpTemplateId;
+  const hasContent = Boolean(message.trim()) || Boolean(templateId);
 
   async function patch(label: string, body: FollowUpPatch, success: string) {
     setBusy(label);
@@ -152,7 +155,11 @@ function FollowUpCard({
         const saved = await apiJson<FollowUpMutationResponse>(`/v1/follow-ups/${item.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ followUpMessage: message, followUpAt: fromLocalInput(date) }),
+          body: JSON.stringify({
+            followUpMessage: message,
+            followUpTemplateId: templateId,
+            followUpAt: fromLocalInput(date),
+          }),
         });
         onChange(saved.item);
       }
@@ -238,15 +245,14 @@ function FollowUpCard({
                 aria-label="Follow-up date and time"
               />
             </div>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Message to send on that day"
-              rows={3}
-              className="text-sm"
+            <FollowUpMessageField
+              message={message}
+              onMessageChange={setMessage}
+              templateId={templateId}
+              onTemplateChange={setTemplateId}
             />
             <div className="flex flex-wrap gap-2">
-              {(dirty || !scheduled) && message.trim() && date ? (
+              {(dirty || !scheduled) && hasContent && date ? (
                 <Button
                   type="button"
                   size="sm"
@@ -260,6 +266,7 @@ function FollowUpCard({
                         ? {
                             followUpAt: fromLocalInput(date),
                             followUpMessage: message,
+                            followUpTemplateId: templateId,
                             followUpStatus: "SCHEDULED",
                           }
                         : { followUpStatus: "SCHEDULED" },
@@ -275,7 +282,7 @@ function FollowUpCard({
                 type="button"
                 size="sm"
                 variant="outline"
-                disabled={busy !== null || !item.canSend || !message.trim()}
+                disabled={busy !== null || !item.canSend || !hasContent}
                 onClick={sendNow}
               >
                 {busy === "send" ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -494,7 +501,7 @@ export function FollowUpsClient() {
           {items.map((item) => (
             <FollowUpCard
               // Remount when the saved plan changes so the edit boxes reset to the server values.
-              key={`${item.id}|${item.followUpAt}|${item.followUpMessage}|${item.followUpStatus}`}
+              key={`${item.id}|${item.followUpAt}|${item.followUpMessage}|${item.followUpTemplateId}|${item.followUpStatus}`}
               item={item}
               onChange={replaceItem}
               onRemove={removeItem}

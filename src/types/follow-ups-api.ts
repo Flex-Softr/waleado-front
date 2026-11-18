@@ -26,6 +26,8 @@ export type FollowUpApi = {
   note: string;
   followUpAt: string | null;
   followUpMessage: string | null;
+  /** Saved template sent instead of plain text. */
+  followUpTemplateId: string | null;
   followUpsSent: number;
   lastFollowUpSentAt: string | null;
   lastConversationAt: string;
@@ -43,6 +45,7 @@ export type FollowUpPatch = {
   stage?: LeadStage;
   followUpAt?: string | null;
   followUpMessage?: string | null;
+  followUpTemplateId?: string | null;
   followUpStatus?: "SCHEDULED" | "CANCELED";
   needsHuman?: boolean;
   manualLock?: boolean;

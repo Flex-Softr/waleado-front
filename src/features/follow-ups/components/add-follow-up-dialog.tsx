@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { FollowUpMessageField } from "@/features/follow-ups/components/follow-up-message-field";
 
 type Source = "type" | "chats" | "contacts";
 type Person = { phone: string; name: string };
@@ -128,6 +128,7 @@ export function AddFollowUpDialog({
   const [note, setNote] = React.useState("");
   const [date, setDate] = React.useState(() => presetValue(1));
   const [message, setMessage] = React.useState("");
+  const [templateId, setTemplateId] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
   const [chats, setChats] = React.useState<{ deviceId: string; people: Person[] } | null>(null);
@@ -227,7 +228,11 @@ export function AddFollowUpDialog({
   const when = date ? new Date(date) : null;
   const validDate = Boolean(when && !Number.isNaN(when.getTime()));
   const canSubmit =
-    !saving && deviceId.length > 0 && phone.trim().length >= 6 && message.trim().length > 0 && validDate;
+    !saving &&
+    deviceId.length > 0 &&
+    phone.trim().length >= 6 &&
+    (message.trim().length > 0 || Boolean(templateId)) &&
+    validDate;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -243,7 +248,8 @@ export function AddFollowUpDialog({
           name: name.trim() || null,
           note: note.trim() || null,
           followUpAt: when.toISOString(),
-          followUpMessage: message.trim(),
+          followUpMessage: message.trim() || null,
+          followUpTemplateId: templateId,
         }),
       });
       if (res.everMessaged) {
@@ -411,13 +417,13 @@ export function AddFollowUpDialog({
 
           <div className="space-y-2">
             <Label htmlFor="afu-message">Message</Label>
-            <Textarea
+            <FollowUpMessageField
               id="afu-message"
               rows={4}
-              maxLength={1500}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="What should be sent on that day"
+              message={message}
+              onMessageChange={setMessage}
+              templateId={templateId}
+              onTemplateChange={setTemplateId}
             />
           </div>
 
