@@ -1,3 +1,4 @@
+import type { TemplateShowIn, TemplateVariableApi } from "@/types/templates-api";
 import type { TemplateTypeId } from "@/features/templates/config/template-type-definitions";
 
 export type { TemplateTypeId } from "@/features/templates/config/template-type-definitions";
@@ -54,6 +55,13 @@ export type MessageTemplateRecord = {
   media?: TemplateMedia | null;
   /** Inactive templates are hidden from send/campaign pickers. */
   active: boolean;
+  tags: string[];
+  versions: string[];
+  variables: TemplateVariableApi[];
+  showIn: TemplateShowIn[];
+  usage: { autoReplies: number; campaigns: number; followUps: number; callResponders: number } | null;
+  /** ISO time, for sorting. */
+  updatedAt: string;
   createdAtLabel: string;
   updatedAtLabel: string;
 };

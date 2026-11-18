@@ -66,6 +66,12 @@ export function messageTemplateApiToRecord(
     buttons,
     media,
     active: t.active !== false,
+    tags: t.tags ?? [],
+    versions: t.versions ?? [],
+    variables: t.variables ?? [],
+    showIn: t.showIn ?? ["follow_up", "auto_reply", "campaign", "live_chat"],
+    usage: t.usage ?? null,
+    updatedAt: t.updatedAt,
     createdAtLabel: formatTemplateDate(t.createdAt),
     updatedAtLabel: formatTemplateDate(t.updatedAt),
   };
