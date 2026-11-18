@@ -1,5 +1,6 @@
 "use client";
 
+import { isOfferedIn } from "@/features/templates/lib/render-template-text";
 import * as React from "react";
 import {
   Check,
@@ -304,9 +305,7 @@ export function CreateBulkCampaignDialog({
         ]);
         if (cancelled) return;
         setAllDevices(devRes.devices);
-        setTemplates(
-          tplRes.templates.filter((tpl) => tpl.active !== false)
-        );
+        setTemplates(tplRes.templates.filter((tpl) => isOfferedIn(tpl, "campaign")));
         setCredentials(
           Array.isArray(credRes.credentials) ? credRes.credentials : []
         );

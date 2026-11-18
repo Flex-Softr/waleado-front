@@ -4,6 +4,9 @@ export type TemplateInteractiveButtonApi = {
   label: string;
 };
 
+export type TemplateShowIn = "follow_up" | "auto_reply" | "campaign" | "live_chat";
+export type TemplateVariableApi = { key: string; value: string };
+
 /** Matches `GET /v1/templates` items and `POST /v1/templates` `template`. */
 export type MessageTemplateApiRecord = {
   id: string;
@@ -19,6 +22,13 @@ export type MessageTemplateApiRecord = {
   media?: Record<string, unknown> | null;
   /** When false, template is hidden from send/campaign pickers. */
   active?: boolean;
+  tags?: string[];
+  /** Alternate wordings of `content`; one is picked at random per send. */
+  versions?: string[];
+  variables?: TemplateVariableApi[];
+  /** Pickers that list this template. */
+  showIn?: TemplateShowIn[];
+  usage?: { autoReplies: number; campaigns: number; followUps: number; callResponders: number };
   createdAt: string;
   updatedAt: string;
 };

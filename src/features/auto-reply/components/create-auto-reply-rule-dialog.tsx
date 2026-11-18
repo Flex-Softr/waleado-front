@@ -1,5 +1,6 @@
 "use client";
 
+import { isOfferedIn } from "@/features/templates/lib/render-template-text";
 import * as React from "react";
 import {
   Check,
@@ -212,7 +213,9 @@ export function CreateAutoReplyRuleDialog({
         ]);
         if (cancelled) return;
         setDevices(devRes.devices);
-        setTemplates(tplRes.templates.filter((tpl) => tpl.active !== false));
+        setTemplates(
+          tplRes.templates.filter((tpl) => isOfferedIn(tpl, "auto_reply", editingRule?.templateId))
+        );
         setMediaAssets(mediaRes.assets);
         setCredentials(credRes.credentials);
         setAiSkills(skillsRes.skills);

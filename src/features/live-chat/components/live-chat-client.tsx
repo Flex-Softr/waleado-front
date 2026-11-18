@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 
 import { AddFollowUpDialog } from "@/features/follow-ups/components/add-follow-up-dialog";
+import { useQuickReplies } from "@/features/live-chat/components/quick-reply-menu";
 import { LiveChatNewThreadDialog } from "@/features/live-chat/components/live-chat-new-thread-dialog";
 import { LiveChatRenameThreadDialog } from "@/features/live-chat/components/live-chat-rename-thread-dialog";
 import { DeviceConnectionAlert } from "@/features/shared/components/device-connection-alert";
@@ -599,7 +600,20 @@ export function LiveChatClient() {
     );
   }
 
+  const quickReplyName = selectedThread
+    ? (() => {
+        const t = threadTitleById.get(selectedThread.id) ?? selectedThread.peerLabel;
+        return t && t !== selectedThread.peerPhone ? t : null;
+      })()
+    : null;
+  const quickReplies = useQuickReplies({
+    draft,
+    setDraft,
+    contact: { name: quickReplyName, phone: selectedThread?.peerPhone ?? null },
+  });
+
   function onComposerKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (quickReplies.onKeyDown(e)) return;
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleSend();
@@ -1029,6 +1043,7 @@ export function LiveChatClient() {
                     disabled={!sessionConnected}
                     onChange={handleAttachmentFile}
                   />
+                  {quickReplies.menu}
                   <Textarea
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
@@ -1036,7 +1051,7 @@ export function LiveChatClient() {
                     placeholder={
                       !sessionConnected
                         ? "Connect this WhatsApp session under Devices to send messages..."
-                        : "Type a message..."
+                        : "Type a message, or / for templates"
                     }
                     rows={2}
                     className="min-h-[44px] w-full resize-none rounded-md text-[15px]"

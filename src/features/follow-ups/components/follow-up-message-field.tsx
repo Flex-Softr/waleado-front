@@ -1,5 +1,6 @@
 "use client";
 
+import { isOfferedIn } from "@/features/templates/lib/render-template-text";
 import * as React from "react";
 import Link from "next/link";
 import { FileText, X } from "lucide-react";
@@ -28,6 +29,7 @@ export function useActiveTemplates(): MessageTemplateApiRecord[] | null {
     if (!cache) {
       cache = apiJson<TemplatesListResponse>("/v1/templates")
         .then((r) => r.templates.filter((t) => t.active !== false))
+        // "Show this template in" is applied by the field, so a saved pick stays visible.
         .catch(() => {
           cache = null;
           return [];
@@ -64,6 +66,7 @@ export function FollowUpMessageField({
   const templates = useActiveTemplates();
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const attached = templateId ? templates?.find((t) => t.id === templateId) : null;
+  const offered = templates?.filter((t) => isOfferedIn(t, "follow_up", templateId)) ?? null;
 
   function pick(idValue: string) {
     const t = templates?.find((x) => x.id === idValue);
@@ -93,9 +96,9 @@ export function FollowUpMessageField({
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <FileText className="size-4 shrink-0 text-muted-foreground" />
-        {templates === null ? (
+        {offered === null ? (
           <span className="text-xs text-muted-foreground">Loading templates…</span>
-        ) : templates.length === 0 ? (
+        ) : offered.length === 0 ? (
           <span className="text-xs text-muted-foreground">
             No templates yet.{" "}
             <Link href="/templates" className="underline underline-offset-2">
@@ -111,7 +114,7 @@ export function FollowUpMessageField({
             onChange={(e) => pick(e.target.value)}
           >
             <option value="">Use a saved template…</option>
-            {templates.map((t) => (
+            {offered.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
                 {isTextTemplate(t) ? "" : ` · ${TYPE_LABEL.get(t.typeId) ?? t.typeId}`}
