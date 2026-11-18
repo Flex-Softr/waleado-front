@@ -5,6 +5,7 @@ import { ChevronDown, Loader2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 
 import type {
+  FollowUpAiMode,
   FollowUpSettings,
   FollowUpSettingsResponse,
 } from "@/types/follow-ups-api";
@@ -35,6 +36,24 @@ function clampInt(v: string, min: number, max: number, fallback: number): number
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
 }
+
+const AI_MODES: { id: FollowUpAiMode; label: string; hint: string }[] = [
+  {
+    id: "SUGGEST",
+    label: "AI suggests, I approve",
+    hint: "The AI drafts a date and message after each chat. Nothing is sent until you approve it.",
+  },
+  {
+    id: "AUTO",
+    label: "AI decides",
+    hint: "The AI schedules follow-ups by itself. You can still edit or cancel any of them.",
+  },
+  {
+    id: "OFF",
+    label: "Manual only",
+    hint: "The AI plans nothing. The list only holds the numbers you add yourself.",
+  },
+];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
@@ -147,6 +166,30 @@ export function FollowUpSettingsCard() {
               <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
             </Button>
           </div>
+        </div>
+
+        <div className="space-y-2 border-t pt-4">
+          <span className="text-sm font-semibold">Who plans the follow-ups</span>
+          <div className="flex flex-wrap gap-2">
+            {AI_MODES.map((m) => (
+              <Button
+                key={m.id}
+                type="button"
+                size="sm"
+                variant={settings.aiMode === m.id ? "default" : "outline"}
+                disabled={saving}
+                aria-pressed={settings.aiMode === m.id}
+                onClick={() => {
+                  if (settings.aiMode !== m.id) void save({ ...draft, aiMode: m.id });
+                }}
+              >
+                {m.label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {AI_MODES.find((m) => m.id === settings.aiMode)?.hint}
+          </p>
         </div>
 
         {open ? (
