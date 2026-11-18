@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  CalendarClock,
   ChevronDown,
   Circle,
   FileText,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AddFollowUpDialog } from "@/features/follow-ups/components/add-follow-up-dialog";
 import { LiveChatNewThreadDialog } from "@/features/live-chat/components/live-chat-new-thread-dialog";
 import { LiveChatRenameThreadDialog } from "@/features/live-chat/components/live-chat-rename-thread-dialog";
 import { DeviceConnectionAlert } from "@/features/shared/components/device-connection-alert";
@@ -136,6 +138,7 @@ export function LiveChatClient() {
 
   const [newThreadOpen, setNewThreadOpen] = React.useState(false);
   const [renameOpen, setRenameOpen] = React.useState(false);
+  const [followUpOpen, setFollowUpOpen] = React.useState(false);
 
   const bottomRef = React.useRef<HTMLDivElement>(null);
   const messagesContainerRef = React.useRef<HTMLDivElement>(null);
@@ -838,16 +841,28 @@ export function LiveChatClient() {
                       : ""}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 rounded-md"
-                  onClick={() => setRenameOpen(true)}
-                >
-                  <Pencil className="size-3.5" />
-                  Rename
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-md"
+                    onClick={() => setFollowUpOpen(true)}
+                  >
+                    <CalendarClock className="size-3.5" />
+                    Follow up
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-md"
+                    onClick={() => setRenameOpen(true)}
+                  >
+                    <Pencil className="size-3.5" />
+                    Rename
+                  </Button>
+                </div>
               </header>
 
               <div
@@ -1182,6 +1197,20 @@ export function LiveChatClient() {
         deviceId={deviceId}
         onCreated={onThreadCreated}
       />
+      {followUpOpen && selectedThread ? (
+        <AddFollowUpDialog
+          initial={{
+            deviceId: selectedThread.deviceId,
+            phone: selectedThread.peerPhone,
+            name: (() => {
+              const t = threadTitleById.get(selectedThread.id) ?? selectedThread.peerLabel;
+              return t && t !== selectedThread.peerPhone ? t : "";
+            })(),
+          }}
+          onClose={() => setFollowUpOpen(false)}
+          onAdded={() => undefined}
+        />
+      ) : null}
       <LiveChatRenameThreadDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}

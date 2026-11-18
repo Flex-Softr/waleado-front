@@ -113,15 +113,18 @@ function PersonPicker({
 export function AddFollowUpDialog({
   onClose,
   onAdded,
+  initial,
 }: {
   onClose: () => void;
   onAdded: (item: FollowUpApi) => void;
+  /** Prefill from a chat or contact (number, name, and the WhatsApp number it came in on). */
+  initial?: { deviceId?: string; phone?: string; name?: string };
 }) {
   const [devices, setDevices] = React.useState<DeviceApiRecord[] | null>(null);
-  const [deviceId, setDeviceId] = React.useState("");
+  const [deviceId, setDeviceId] = React.useState(initial?.deviceId ?? "");
   const [source, setSource] = React.useState<Source>("type");
-  const [phone, setPhone] = React.useState("");
-  const [name, setName] = React.useState("");
+  const [phone, setPhone] = React.useState(initial?.phone ?? "");
+  const [name, setName] = React.useState(initial?.name ?? "");
   const [note, setNote] = React.useState("");
   const [date, setDate] = React.useState(() => presetValue(1));
   const [message, setMessage] = React.useState("");
@@ -139,6 +142,7 @@ export function AddFollowUpDialog({
         const res = await apiJson<DevicesListResponse>("/v1/devices");
         if (cancelled) return;
         setDevices(res.devices);
+        if (initial?.deviceId && res.devices.some((d) => d.id === initial.deviceId)) return;
         const first =
           res.devices.find((d) => d.isDefault && d.status === "connected") ??
           res.devices.find((d) => d.status === "connected") ??
@@ -156,6 +160,8 @@ export function AddFollowUpDialog({
     return () => {
       cancelled = true;
     };
+    // Prefill is read once, when the dialog opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadChats(forDevice: string) {
